@@ -1,0 +1,78 @@
+# The Temporal Pattern — `HasTemporalAssignment`
+
+Every effective-dated fact in AlphaSchool (a teacher's homeroom assignment, an employee's branch membership, a guardian's relationship to a student) follows the same shared pattern instead of each module inventing its own `effective_from`/`effective_until` handling. See `docs/DOMAIN_BLUEPRINT.md` §6 ("Effective Dating Pattern") and Addendum A3/B1 for why this exists and why it's a Core, not a per-module, concern.
+
+## The interval convention: half-open, `[from, until)`
+
+`effective_until` is **exclusive**. A period ending on `2026-06-01` and the next one starting on `2026-06-01` are adjacent, not overlapping. This is deliberate:
+
+- Chaining consecutive periods never needs `+1`/`-1` day arithmetic.
+- There's no ambiguity about which period "owns" a shared boundary day (the new one does).
+- `App\Core\ValueObjects\DateRange::overlaps()` encodes this precisely — see its tests (`tests/Unit/Core/ValueObjects/DateRangeTest.php`) for the exact edge cases this resolves.
+
+A null `effective_until` means "still ongoing" (open-ended).
+
+## Required columns
+
+Any table adopting `HasTemporalAssignment` needs:
+
+| Column | Type | Notes |
+|---|---|---|
+| `effective_from` | `date` | Required |
+| `effective_until` | `date`, nullable | Exclusive; null = ongoing |
+| `status` | `string` | `scheduled` \| `active` \| `ended` \| `cancelled` — see below |
+| `reason_code_id` | `unsignedBigInteger`, nullable, FK to `reason_codes` | Set when closing or cancelling |
+| `ended_by_id` | `unsignedBigInteger`, nullable | Who closed/cancelled it |
+
+## `status` is administrative, not authoritative
+
+Whether a record is *actually* in effect right now is always derived from the date range (`asOf()`/`active()` query scopes), never trusted from the stored `status` value alone. This means a `scheduled` record whose `effective_from` has already arrived is correctly picked up by `active()` without anything needing to flip its status via a cron job — see `HasTemporalAssignmentTest`'s "status label is administrative only" test for the exact scenario this protects against.
+
+`cancelled` is the one status that's authoritative: a cancelled record never competes for exclusivity and is excluded from every query scope, regardless of its dates. Use `cancelAssignment()` for a record that should never have existed (a mistake); use `closeAssignment()` for a record that legitimately concluded.
+
+## Adopting the trait
+
+A consuming model must implement two methods:
+
+```php
+use App\Core\Concerns\HasTemporalAssignment;
+
+class HomeroomTeacherAssignment extends Model
+{
+    use HasTemporalAssignment;
+
+    // Which other rows compete for exclusivity. Two teachers cannot both
+    // be the active homeroom teacher of the same section at the same time.
+    public function temporalScopeAttributes(): array
+    {
+        return ['section_id' => $this->section_id];
+    }
+
+    // Which reason_codes.context this model's reasons are registered
+    // under -- e.g. HR seeds 'homeroom_teacher_assignment' reasons
+    // ('teacher_left', 'reassigned') when this module is actually built.
+    public function temporalReasonContext(): string
+    {
+        return 'homeroom_teacher_assignment';
+    }
+}
+```
+
+That's it — creating, closing, or cancelling a record automatically gets overlap validation and reason-code enforcement for free.
+
+## Reason codes: a pure value object, a DB-backed lookup, and a validation rule — three separate things
+
+- **`App\Core\ValueObjects\ReasonCode`** — a pure value object. Validates only that a string is non-empty, lowercase snake_case. No database access, ever. Fast and trivial to construct in tests.
+- **`App\Core\Models\ReasonCode`** — the Eloquent model backing the `reason_codes` table, the actual catalog of which codes are valid per `context`. Core owns the table shape; **each module seeds its own context's reasons** as that module is actually built (HR seeds `employment` reasons in Phase 6, Academic seeds `enrollment` reasons in Phase 4/5) — see `database/seeders/ReasonCodeSeeder.php`, which is deliberately empty as of Sprint 1.1.
+- **`App\Core\Rules\ValidReasonCode`** — a Laravel `ValidationRule` for FormRequests, checking a submitted code against the DB-backed catalog for a given context. Use this at the HTTP boundary, where a user actually submits a reason — not inside the value object itself.
+
+Don't conflate these. The value object being DB-free is deliberate — it's what `closeAssignment()`/`cancelAssignment()` accept as a type-safe parameter without forcing every call site to hit the database just to construct one.
+
+## Why the overlap guard is a `saving` hook, not something you call manually
+
+`HasTemporalAssignment::bootHasTemporalAssignment()` hooks into every `save()` automatically. You cannot accidentally create or update a record into an overlapping state — the guard runs whether you're calling `Model::create()` directly, through a service, or from a seeder. It only re-runs the (small) competing-scope query when a temporally-relevant column actually changed (`effective_from`, `effective_until`, `status`, or any of `temporalScopeAttributes()`'s keys) — an unrelated column update on an existing record doesn't re-trigger it.
+
+## What this trait deliberately does not do
+
+- It does not chain records together (e.g. maintaining a `previous_enrollment_id`/`next_enrollment_id` link). That's domain-specific to each consumer — Enrollment's chain means something different from Employment's, and forcing one generic chaining mechanism here would be exactly the "Core needs domain richness" mistake `docs/DOMAIN_BLUEPRINT.md` Addendum B1 warns against.
+- It does not open the *next* period when you close one. `closeAssignment()` only closes the current record — deciding what the next period should look like (same grade? different branch? nothing at all?) is business logic that belongs in the consuming module's own action/service class.
