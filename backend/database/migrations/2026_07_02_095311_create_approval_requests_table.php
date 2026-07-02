@@ -24,7 +24,17 @@ return new class extends Migration
             $table->unsignedBigInteger('requestable_id');
 
             $table->string('status')->default('pending'); // pending|approved|rejected|cancelled
-            $table->foreignId('requested_by_id')->constrained('users');
+
+            // Stores a User ID by convention (User is the single
+            // universal actor per the Identity Blueprint decision) --
+            // deliberately NOT a ->constrained('users') foreign key.
+            // Core must not have a schema-level dependency on a
+            // Foundation-layer table (docs/DOMAIN_BLUEPRINT.md's Core
+            // rule: "Core depends on nothing else in the entire system --
+            // not even Foundation modules"). Referential integrity for
+            // this column is the calling module's responsibility.
+            $table->unsignedBigInteger('requested_by_id');
+
             $table->text('reason')->nullable();
 
             // Default true: no-self-approval is the safer default for
@@ -40,6 +50,13 @@ return new class extends Migration
             $table->timestamp('decided_at')->nullable();
 
             $table->timestamps();
+
+            // Approval decisions are evidentiary -- who approved a Merge
+            // and when must never simply disappear via a direct delete()
+            // call bypassing the engine. Soft-delete, not hard-delete,
+            // matching the "the record of a decision must survive" theme
+            // already established for Identity Maintenance.
+            $table->softDeletes();
 
             $table->index(['requestable_type', 'requestable_id']);
         });

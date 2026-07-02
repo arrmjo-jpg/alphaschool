@@ -4,9 +4,12 @@ namespace App\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ApprovalStep extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'approval_request_id',
         'step_number',

@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **ADR compliance review of Sprint 1.2** caught a real Core-boundary violation: `ApprovalRequest`/`ApprovalStep` had hard `->constrained('users')` foreign keys, a schema-level dependency from Core into what becomes Identity's Foundation table in Phase 2, violating "Core depends on nothing else in the entire system — not even Foundation modules." Fixed by editing the (still-unreleased, unconsumed) Sprint 1.2 migrations directly rather than layering an `ALTER TABLE` migration on top of a known-wrong original — the actor columns now store a User ID by convention, with referential integrity left to the calling module. Same review added `SoftDeletes` to both models, since approval decisions are evidentiary and nothing should allow that trail to silently disappear via a direct `delete()` call, matching the "the record of a decision must survive" principle already established for Identity Maintenance. See `docs/developer/approval-engine.md`.
+
 ### Added
 
 **Sprint 1.2 (Core Domain — Number Generator, Approval Engine, Money):**

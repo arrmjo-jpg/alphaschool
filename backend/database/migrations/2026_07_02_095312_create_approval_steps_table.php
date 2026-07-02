@@ -22,14 +22,20 @@ return new class extends Migration
             // nullable columns" isn't expressible as a simple constraint
             // portable across MySQL/SQLite).
             $table->string('required_role')->nullable();
-            $table->foreignId('required_user_id')->nullable()->constrained('users');
+
+            // User IDs by convention, deliberately not constrained to the
+            // `users` table -- see create_approval_requests_table for why
+            // Core must not hold a schema-level FK into a Foundation
+            // module's table.
+            $table->unsignedBigInteger('required_user_id')->nullable();
 
             $table->string('status')->default('pending'); // pending|approved|rejected
-            $table->foreignId('decided_by_id')->nullable()->constrained('users');
+            $table->unsignedBigInteger('decided_by_id')->nullable();
             $table->timestamp('decided_at')->nullable();
             $table->text('comments')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['approval_request_id', 'step_number']);
         });
