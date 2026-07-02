@@ -1,0 +1,10 @@
+# CODEOWNERS — AlphaSchool ERP
+#
+# Establishes repository governance from Sprint 0.1. Currently a single
+# owner; expand this file as the team grows past Phase 4 (see
+# docs/IMPLEMENTATION_PLAYBOOK.md, Parallel Development Strategy) rather
+# than leaving it stale once module ownership actually diverges.
+#
+# TODO: replace with your actual GitHub username or team handle
+# (must be a GitHub username/team, not an email — e.g. @your-github-handle)
+* @REPLACE_WITH_YOUR_GITHUB_USERNAME

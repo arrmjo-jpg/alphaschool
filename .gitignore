@@ -1,0 +1,59 @@
+# Root — AlphaSchool monorepo
+
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+.zed/
+.cursor/
+.nova/
+.codex/
+Thumbs.db
+
+# Claude Code local settings (machine/session-specific, never shared)
+.claude/settings.local.json
+
+# ---- backend (Laravel) ----
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/auth.json
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/fonts-manifest.dev.json
+backend/public/hot/
+backend/public/storage/
+backend/storage/*.key
+backend/storage/pail
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+!backend/storage/framework/cache/.gitignore
+!backend/storage/framework/sessions/.gitignore
+!backend/storage/framework/testing/.gitignore
+!backend/storage/framework/views/.gitignore
+!backend/storage/logs/.gitignore
+backend/*.log
+backend/.phpunit.result.cache
+backend/.phpunit.cache/
+backend/_ide_helper.php
+backend/Homestead.json
+backend/Homestead.yaml
+backend/phpstan-baseline.neon.bak
+backend/.deptrac.cache
+
+# ---- admin (React + Vite, not yet scaffolded) ----
+admin/node_modules/
+admin/dist/
+admin/.env
+admin/.env.local
+
+# ---- frontend (Next.js, not yet scaffolded) ----
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local

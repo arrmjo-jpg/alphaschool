@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app
+
+    # Level 6 to start (Playbook Technical Debt Register: ratchet upward in
+    # later phases as the team gains fluency and the codebase stabilizes —
+    # do not jump straight to the max level against an empty codebase).
+    level: 6
+
+    checkMissingIterableValueType: false

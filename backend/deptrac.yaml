@@ -1,0 +1,42 @@
+deptrac:
+  paths:
+    - ./app
+  exclude_files:
+    - '#.*Test.*#'
+  layers:
+    - name: Core
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Core\\.*#'
+
+    - name: Foundation
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Modules\\(Identity|IdentityMaintenance|People|Media|Notifications|Settings)\\.*#'
+
+    - name: Domain
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Modules\\(Admissions|Academic|Finance|HR|Inventory|Library|Transportation|LMS|Reporting)\\.*#'
+
+  ruleset:
+    # Core is domain-agnostic: it depends on nothing else in this application
+    # (Blueprint §1, Addendum B1). Also checked by the Pest arch test in
+    # tests/Architecture/CoreBoundaryTest.php.
+    Core: []
+
+    # Foundation modules may use Core, and may depend on each other where a
+    # real relationship exists (e.g. People -> Media for photo collections),
+    # but must never depend on a Domain module.
+    Foundation:
+      - Core
+      - Foundation
+
+    # Domain modules may use Core and Foundation, but never a sibling Domain
+    # module directly — cross-module interaction goes through events or that
+    # module's public service contract instead (Blueprint §2). This omission
+    # is the actual enforcement: Domain is deliberately absent from its own
+    # ruleset entry.
+    Domain:
+      - Core
+      - Foundation

@@ -1,0 +1,89 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+
+    # Larastan boots the full Laravel application (for facade/model
+    # reflection), which requires a reachable database even for static
+    # analysis, not just for the app itself — confirmed during Sprint 0.1's
+    # local setup, where the same requirement surfaced.
+    services:
+      mysql:
+        image: mariadb:11
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: alphaschool_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, dom, fileinfo, mysql, pdo_mysql, bcmath, intl, gd, zip
+          coverage: none
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Configure environment for CI
+        run: |
+          php -r "
+            \$env = file_get_contents('.env');
+            \$env = preg_replace('/^DB_HOST=.*/m', 'DB_HOST=127.0.0.1', \$env);
+            \$env = preg_replace('/^DB_DATABASE=.*/m', 'DB_DATABASE=alphaschool_ci', \$env);
+            \$env = preg_replace('/^DB_USERNAME=.*/m', 'DB_USERNAME=root', \$env);
+            \$env = preg_replace('/^DB_PASSWORD=.*/m', 'DB_PASSWORD=', \$env);
+            file_put_contents('.env', \$env);
+          "
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Composer audit (dependency vulnerability scan)
+        run: composer audit
+
+      - name: Pint (formatting)
+        run: vendor/bin/pint --test
+
+      - name: Larastan (static analysis)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: deptrac (module boundaries)
+        run: vendor/bin/deptrac analyse --no-interaction
+
+      - name: Pest — Unit
+        run: vendor/bin/pest --testsuite=Unit
+
+      - name: Pest — Feature
+        run: vendor/bin/pest --testsuite=Feature
+
+      - name: Pest — Architecture
+        run: vendor/bin/pest --testsuite=Architecture
