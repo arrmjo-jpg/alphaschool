@@ -72,6 +72,33 @@ Don't conflate these. The value object being DB-free is deliberate — it's what
 
 `HasTemporalAssignment::bootHasTemporalAssignment()` hooks into every `save()` automatically. You cannot accidentally create or update a record into an overlapping state — the guard runs whether you're calling `Model::create()` directly, through a service, or from a seeder. It only re-runs the (small) competing-scope query when a temporally-relevant column actually changed (`effective_from`, `effective_until`, `status`, or any of `temporalScopeAttributes()`'s keys) — an unrelated column update on an existing record doesn't re-trigger it.
 
+## `temporalScopeAttributes()` pitfall: scope by the right combination, not just the "obvious" one
+
+The trait doesn't know or care what "the same scope" means — that's entirely up to your implementation. Get this wrong and the overlap guard silently enforces the wrong exclusivity rule. The concrete, realistic mistake: if `employee_branches` is ever built with
+
+```php
+public function temporalScopeAttributes(): array
+{
+    return ['employee_id' => $this->employee_id]; // WRONG
+}
+```
+
+this incorrectly prevents an employee from being active at a second branch while already active at a first — but `docs/DOMAIN_BLUEPRINT.md` explicitly allows an employee to belong to multiple branches simultaneously (a genuine many-to-many). The correct scope is the **pair**:
+
+```php
+public function temporalScopeAttributes(): array
+{
+    return ['employee_id' => $this->employee_id, 'branch_id' => $this->branch_id]; // correct
+}
+```
+
+— exclusivity on "this employee at this specific branch," not "this employee at all." Always ask: *what combination of columns, together, must never have two overlapping active rows?* — not just "which single column feels like the owner."
+
+## Two deliberate scope boundaries — not gaps
+
+- **Role assignments.** Spatie's `model_has_roles` is a third-party table this trait cannot be applied to directly. A future time-bound role delegation (e.g. a substitute teacher granted a role for two weeks) needs a separate tracking table (e.g. `role_assignments`) that adopts `HasTemporalAssignment` itself and drives Spatie's real `assignRole()`/`removeRole()` via event listeners at the boundary dates — not a retrofit onto Spatie's own pivot.
+- **Recurring schedules.** A timetable slot has two independent concerns: which term it's valid for (this trait's job) and its recurring day-of-week/time-of-day pattern (not this trait's job, and it should never try). Baking recurrence handling into Core would be exactly the "Core needs domain richness" mistake `docs/DOMAIN_BLUEPRINT.md` Addendum B1 exists to prevent.
+
 ## What this trait deliberately does not do
 
 - It does not chain records together (e.g. maintaining a `previous_enrollment_id`/`next_enrollment_id` link). That's domain-specific to each consumer — Enrollment's chain means something different from Employment's, and forcing one generic chaining mechanism here would be exactly the "Core needs domain richness" mistake `docs/DOMAIN_BLUEPRINT.md` Addendum B1 warns against.
