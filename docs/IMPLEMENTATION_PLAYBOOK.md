@@ -27,6 +27,9 @@ Phases 0–4 are specified to full sprint detail — they are actionable today. 
 9. API docs (Scramble) regenerated and spot-checked for any new/changed endpoint.
 10. Seeders updated for any new lookup/reference data.
 11. `CHANGELOG.md` entry added.
+12. **ADR compliance review performed** — every new component explicitly checked against the Domain Blueprint, existing ADRs, and Core/Foundation layering rules, not inferred from tests/Pint/deptrac passing (see "Sprint completion policy" below for why this must be a distinct pass).
+13. **No unresolved architecture-review finding** — any finding from item 12 is fixed (or explicitly, documentedly deferred) before the sprint is done.
+14. **The sprint's Git tag points to the commit where items 1–13 are all true** — not an earlier commit later found to need a fix.
 
 ### Quality gates — nothing merges to `main` without all of these being true
 
@@ -38,6 +41,18 @@ Phases 0–4 are specified to full sprint detail — they are actionable today. 
 - [ ] Documentation updated per the table in "Documentation Discipline" below
 - [ ] If the PR touches anything on the Blueprint's frozen list (Addendum A8) — a linked, approved ADR is attached, or the PR is rejected outright
 - [ ] Reviewed by someone other than the author. On a solo-developer team, this becomes a mandatory 24-hour cooling-off self-review pass against this same checklist before merge — not skipped, just re-assigned to "future you."
+
+### Sprint completion policy (standing rule, established after Sprint 1.2's ADR compliance review)
+
+A Sprint's Git tag is a claim: "this state is architecture-approved and safe to build on." A Sprint is not complete, and its tag must not be created or moved onto a commit, until all five of the following hold:
+
+1. **Tests pass** — the full suite (unit, feature, architecture), not just the sprint's own new tests.
+2. **ADR compliance passes** — every new component checked against `docs/DOMAIN_BLUEPRINT.md`, the existing ADRs (`docs/adr/`), Core boundary rules (domain-agnosticism, promotion-not-prediction, low-churn), and Foundation/Domain layering. This is a distinct, deliberate pass, not assumed from tests passing — Sprint 1.2 shipped with a real Core→Foundation FK violation that every test suite, Pint run, and deptrac check missed, because none of them check *this specific thing*.
+3. **Architecture review passes** — no unresolved finding from the ADR compliance pass. If a finding is found, it gets fixed (or explicitly deferred with a documented reason) before the sprint is considered done, not noted and left for later.
+4. **Documentation is updated** — per the Documentation Discipline table below, including capturing what an ADR compliance pass found and fixed (see `docs/developer/approval-engine.md`'s "Actor references are User IDs by convention" section for the expected shape of this).
+5. **The Git tag points to the approved commit** — if a compliance review finds something after a tag was already created, the fix lands in a new commit and the tag moves to it. A tag pointing at a pre-fix commit is not a historical curiosity to leave alone — it's a false claim that stays false until corrected.
+
+This section itself is now part of the Definition of Done for every subsequent sprint in this document — items 2–3 above are additions to the baseline Definition of Done list, not a one-time reaction to Sprint 1.2 specifically.
 
 ---
 

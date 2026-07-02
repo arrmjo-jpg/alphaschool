@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **New standing Sprint completion policy** (`docs/IMPLEMENTATION_PLAYBOOK.md`, "Sprint completion policy" + Definition of Done items 12–14): a sprint is not done, and its Git tag must not be created/moved onto a commit, until tests pass, an explicit ADR compliance review passes, no unresolved architecture finding remains, documentation is updated, and the tag points to that exact approved commit. `v0.2-core-engines` moved from `8b6b357` to `c1f768d` accordingly — the tag now points to the ADR-compliance-fixed commit, not the original Sprint 1.2 commit.
+
 ### Fixed
 - **ADR compliance review of Sprint 1.2** caught a real Core-boundary violation: `ApprovalRequest`/`ApprovalStep` had hard `->constrained('users')` foreign keys, a schema-level dependency from Core into what becomes Identity's Foundation table in Phase 2, violating "Core depends on nothing else in the entire system — not even Foundation modules." Fixed by editing the (still-unreleased, unconsumed) Sprint 1.2 migrations directly rather than layering an `ALTER TABLE` migration on top of a known-wrong original — the actor columns now store a User ID by convention, with referential integrity left to the calling module. Same review added `SoftDeletes` to both models, since approval decisions are evidentiary and nothing should allow that trail to silently disappear via a direct `delete()` call, matching the "the record of a decision must survive" principle already established for Identity Maintenance. See `docs/developer/approval-engine.md`.
 
