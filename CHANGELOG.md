@@ -10,9 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **New standing Sprint completion policy** (`docs/IMPLEMENTATION_PLAYBOOK.md`, "Sprint completion policy" + Definition of Done items 12–14): a sprint is not done, and its Git tag must not be created/moved onto a commit, until tests pass, an explicit ADR compliance review passes, no unresolved architecture finding remains, documentation is updated, and the tag points to that exact approved commit. `v0.2-core-engines` moved from `8b6b357` to `c1f768d` accordingly — the tag now points to the ADR-compliance-fixed commit, not the original Sprint 1.2 commit.
 
 ### Fixed
+- **ADR compliance review of Sprint 1.3** caught three findings, all fixed before freezing:
+  1. **Media's primary key was a plain auto-increment integer**, violating Addendum D4's explicit, named exception for Media ("its primary key should simply be [a ULID] rather than adding a third identifier"). Fixed by making `id` a ULID directly (`database/migrations/2026_07_01_064044_create_media_table.php` now defines `id` via `ulid()->primary()`; the model uses Laravel's `HasUlids` trait) rather than leaving the default int PK plus Spatie's separate `uuid` column as two identifiers doing what Addendum D4 says one should. Spatie's own `uuid` column (used internally by Media Library Pro's JS uploader) was left untouched — it's a distinct, unrelated mechanism.
+  2. **The new private-files route was unversioned**, violating Addendum B7 ("`/api/v1` from day one"). Moved under `/api/v1/private-files/{media}` — new code added in this sprint has no excuse to compound the gap, even though the pre-existing `/user` route (Sprint 0.1, frozen) still predates that decision and is out of scope for this review.
+  3. **The custom path generator omitted the `{tier}` segment** that both `docs/DOMAIN_BLUEPRINT.md` §12 and the Implementation Playbook's Sprint 1.2.1 spec call for literally. Fixed by reinstating the tier (the media's own disk name) as the first path segment, rather than quietly reinterpreting a frozen spec because the tier also happens to be realized by disk/bucket selection.
+  
+  See `docs/developer/media-architecture.md`.
 - **ADR compliance review of Sprint 1.2** caught a real Core-boundary violation: `ApprovalRequest`/`ApprovalStep` had hard `->constrained('users')` foreign keys, a schema-level dependency from Core into what becomes Identity's Foundation table in Phase 2, violating "Core depends on nothing else in the entire system — not even Foundation modules." Fixed by editing the (still-unreleased, unconsumed) Sprint 1.2 migrations directly rather than layering an `ALTER TABLE` migration on top of a known-wrong original — the actor columns now store a User ID by convention, with referential integrity left to the calling module. Same review added `SoftDeletes` to both models, since approval decisions are evidentiary and nothing should allow that trail to silently disappear via a direct `delete()` call, matching the "the record of a decision must survive" principle already established for Identity Maintenance. See `docs/developer/approval-engine.md`.
 
 ### Added
+
+**Sprint 1.3 / Playbook Sprint 1.2.1 (Media Architecture Skeleton):**
+- `config/filesystems.php`: `public`/`private`/`temporary` disks, each env-driven (`local` for dev, `s3`-compatible for Cloudflare R2 in production).
+- `App\Modules\Media\Support\AlphaSchoolPathGenerator` implementing `{tier}/{branch_id}/{model-type}/{model_id}/{collection}/{media_id}-{filename}`; `App\Modules\Media\Contracts\HasBranchScopedMedia` for opt-in branch partitioning (global entities get no branch folder at all).
+- `App\Modules\Media\Models\Media` extends Spatie's base Media model: ULID primary key (`HasUlids`, Addendum D4's deliberate exception to the dual-ID convention), `sensitivity` classification (`standard`/`high`, Addendum B3), `SoftDeletes`, `LogsActivity`.
+- `GET /api/v1/private-files/{media}` (`auth:sanctum` + `MediaPolicy`) as the sole serving mechanism for private-tier files — never a raw signed URL. `MediaPolicy` is an explicit, documented placeholder (allow-all-authenticated) until Phase 2 Identity supplies real permissions.
+- `App\Modules\Media\Console\Commands\PurgeTemporaryMedia` (`media:purge-temporary --hours --dry-run`), scheduled daily.
+- `docs/developer/media-architecture.md`.
 
 **Sprint 1.2 (Core Domain — Number Generator, Approval Engine, Money):**
 - `App\Core\ValueObjects\Money`: integer minor-units arithmetic (never floats), structural-only currency validation (no hardcoded currency whitelist, same lesson applied to `ReasonCode`), documented round-half-away-from-zero behavior, currency-mismatch rejection. 35 unit tests.

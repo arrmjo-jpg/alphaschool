@@ -34,7 +34,7 @@ it('produces the correct physical path for a branch-scoped entity on the public 
         ->toMediaCollection('photo', 'public');
 
     expect($media->getPathRelativeToRoot())
-        ->toBe("7/MediaFixture/{$fixture->id}/photo/{$media->id}-{$media->file_name}");
+        ->toBe("public/7/MediaFixture/{$fixture->id}/photo/{$media->id}-{$media->file_name}");
 });
 
 it('produces the correct physical path on the private disk', function () {
@@ -46,7 +46,7 @@ it('produces the correct physical path on the private disk', function () {
 
     expect($media->disk)->toBe('private')
         ->and($media->getPathRelativeToRoot())
-        ->toBe("3/MediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}");
+        ->toBe("private/3/MediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}");
 });
 
 it('produces the correct physical path on the temporary disk', function () {
@@ -58,7 +58,7 @@ it('produces the correct physical path on the temporary disk', function () {
 
     expect($media->disk)->toBe('temporary')
         ->and($media->getPathRelativeToRoot())
-        ->toBe("1/MediaFixture/{$fixture->id}/staging/{$media->id}-{$media->file_name}");
+        ->toBe("temporary/1/MediaFixture/{$fixture->id}/staging/{$media->id}-{$media->file_name}");
 });
 
 it('omits the branch segment entirely for a global entity, not an empty placeholder', function () {
@@ -69,8 +69,8 @@ it('omits the branch segment entirely for a global entity, not an empty placehol
         ->toMediaCollection('documents', 'public');
 
     expect($media->getPathRelativeToRoot())
-        ->toBe("GlobalMediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}")
-        ->and($media->getPathRelativeToRoot())->not->toStartWith('/'); // no leading slash from an empty branch segment
+        ->toBe("public/GlobalMediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}")
+        ->and($media->getPathRelativeToRoot())->not->toContain('//'); // no doubled slash from an empty branch segment
 });
 
 it('omits the branch segment for a branch-scoped model whose current branch_id is null', function () {
@@ -81,5 +81,5 @@ it('omits the branch segment for a branch-scoped model whose current branch_id i
         ->toMediaCollection('documents', 'public');
 
     expect($media->getPathRelativeToRoot())
-        ->toBe("MediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}");
+        ->toBe("public/MediaFixture/{$fixture->id}/documents/{$media->id}-{$media->file_name}");
 });

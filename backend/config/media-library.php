@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Media\Models\Media as AlphaSchoolMedia;
+use App\Modules\Media\Support\AlphaSchoolPathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -24,8 +26,6 @@ use Spatie\MediaLibrary\Support\FileNamer\DefaultFileNamer;
 use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 use Spatie\MediaLibraryPro\Models\TemporaryUpload;
-use App\Modules\Media\Models\Media as AlphaSchoolMedia;
-use App\Modules\Media\Support\AlphaSchoolPathGenerator;
 
 return [
 

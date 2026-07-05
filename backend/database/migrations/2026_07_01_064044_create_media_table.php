@@ -9,7 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('media', function (Blueprint $table) {
-            $table->id();
+            // docs/DOMAIN_BLUEPRINT.md Addendum D, D4: Media is the
+            // deliberate exception to the dual-ID (int PK + public_id)
+            // convention -- its primary key IS the ULID directly, rather
+            // than adding a third identifier alongside the int PK and
+            // Spatie's own `uuid` column below.
+            $table->ulid('id')->primary();
 
             $table->morphs('model');
             $table->uuid()->nullable()->unique();

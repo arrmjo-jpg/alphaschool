@@ -54,7 +54,7 @@ it('serves the private media file to an authenticated user', function () {
 it('returns 404 for a media id that does not exist, before authorization even runs', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->getJson('/api/private-files/999999');
+    $response = $this->actingAs($user)->getJson('/api/v1/private-files/999999');
 
     $response->assertNotFound();
 });

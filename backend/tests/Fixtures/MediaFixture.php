@@ -14,7 +14,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * photos) arrives with People in Phase 2. Table is created ad hoc in the
  * test itself, not via a real migration.
  */
-class MediaFixture extends Model implements HasMedia, HasBranchScopedMedia
+class MediaFixture extends Model implements HasBranchScopedMedia, HasMedia
 {
     use InteractsWithMedia;
 

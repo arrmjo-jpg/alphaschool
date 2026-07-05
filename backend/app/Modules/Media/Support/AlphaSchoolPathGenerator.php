@@ -7,18 +7,19 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 
 /**
- * Implements the path scheme from docs/DOMAIN_BLUEPRINT.md §12:
- * {branch_id}/{model-type}/{model_id}/{collection}/{media_id}-{filename}
+ * Implements the path scheme from docs/DOMAIN_BLUEPRINT.md §12 and
+ * IMPLEMENTATION_PLAYBOOK.md's Sprint 1.2.1 spec, literally:
+ * {tier}/{branch_id}/{model-type}/{model_id}/{collection}/{media_id}-{filename}
  * -- colocating one entity's files (cheap bulk export/erasure), keeping
  * categories visually separated, and spreading writes across many
  * prefixes to avoid storage-backend hot-partitioning from sequential
  * keys.
  *
- * "Tier" from the Blueprint's spec is realized as *which disk* stores the
- * file (public/private/temporary, config/filesystems.php) rather than an
- * additional literal path segment -- each tier already has its own root,
- * so repeating the tier name as a folder inside its own root would just
- * be redundant (e.g. storage/app/public/public/...).
+ * "Tier" is the media's own disk name (public/private/temporary), kept as
+ * a literal path segment per the frozen spec even though each tier also
+ * has its own disk root -- this keeps the physical layout identical
+ * regardless of whether a given deployment ever consolidates tiers onto
+ * one shared bucket/disk, which the path scheme should not assume against.
  *
  * The branch segment is present only for models implementing
  * HasBranchScopedMedia and returning a non-null branch ID -- global
@@ -45,6 +46,7 @@ class AlphaSchoolPathGenerator implements PathGenerator
     protected function basePath(Media $media): string
     {
         $segments = array_filter([
+            $media->disk,
             $this->branchSegment($media),
             class_basename($media->model_type),
             (string) $media->model_id,

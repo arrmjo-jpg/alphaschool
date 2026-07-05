@@ -2,6 +2,7 @@
 
 namespace App\Modules\Media\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -14,6 +15,14 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
  *   Spatie's default hard delete.
  * - LogsActivity: reuses the existing Activitylog audit infrastructure
  *   rather than building a parallel one.
+ * - HasUlids: per Addendum D4, Media is the deliberate exception to the
+ *   dual-ID (int PK + public_id) convention used by other aggregates --
+ *   its primary key IS a ULID directly, since Media is never joined
+ *   transitively across other tables in hot-path queries the way
+ *   Person/Enrollment are, so the join-performance argument for keeping
+ *   the PK a cheap integer doesn't apply here. This is unrelated to
+ *   Spatie's own `uuid` column, which Media Library Pro's JS uploader
+ *   components rely on for a separate purpose and must not be removed.
  * - `sensitivity`: a `standard`/`high` classification within the
  *   `private` disk (Addendum B3) -- NOT a fourth disk tier. High-
  *   sensitivity collections (medical, court documents, identity
@@ -23,6 +32,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
  */
 class Media extends BaseMedia
 {
+    use HasUlids;
     use LogsActivity;
     use SoftDeletes;
 

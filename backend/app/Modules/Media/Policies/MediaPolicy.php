@@ -2,8 +2,8 @@
 
 namespace App\Modules\Media\Policies;
 
-use App\Modules\Media\Models\Media;
 use App\Models\User;
+use App\Modules\Media\Models\Media;
 
 /**
  * Authorization for viewing a private-tier Media item
