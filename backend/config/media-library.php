@@ -16,16 +16,16 @@ use Spatie\MediaLibrary\Conversions\ImageGenerators\Webp;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\MediaLibrary\Downloaders\DefaultDownloader;
 use Spatie\MediaLibrary\MediaCollections\FileAdder;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\MediaCollections\Models\Observers\MediaObserver;
 use Spatie\MediaLibrary\ResponsiveImages\Jobs\GenerateResponsiveImagesJob;
 use Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred;
 use Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\FileSizeOptimizedWidthCalculator;
 use Spatie\MediaLibrary\Support\FileNamer\DefaultFileNamer;
 use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
-use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 use Spatie\MediaLibraryPro\Models\TemporaryUpload;
+use App\Modules\Media\Models\Media as AlphaSchoolMedia;
+use App\Modules\Media\Support\AlphaSchoolPathGenerator;
 
 return [
 
@@ -97,9 +97,12 @@ return [
     'queue_conversions_after_database_commit' => env('QUEUE_CONVERSIONS_AFTER_DB_COMMIT', true),
 
     /*
-     * The fully qualified class name of the media model.
+     * The fully qualified class name of the media model. Extended with
+     * SoftDeletes, LogsActivity, and a `sensitivity` classification
+     * (docs/DOMAIN_BLUEPRINT.md Addendum B3) -- see
+     * App\Modules\Media\Models\Media.
      */
-    'media_model' => Media::class,
+    'media_model' => AlphaSchoolMedia::class,
 
     /*
      * The fully qualified class name of the media observer.
@@ -139,9 +142,12 @@ return [
     'file_namer' => DefaultFileNamer::class,
 
     /*
-     * The class that contains the strategy for determining a media file's path.
+     * The class that contains the strategy for determining a media file's
+     * path. See docs/DOMAIN_BLUEPRINT.md §12 and
+     * App\Modules\Media\Support\AlphaSchoolPathGenerator's docblock for
+     * the path scheme this implements.
      */
-    'path_generator' => DefaultPathGenerator::class,
+    'path_generator' => AlphaSchoolPathGenerator::class,
 
     /*
      * The class that contains the strategy for determining how to remove files.

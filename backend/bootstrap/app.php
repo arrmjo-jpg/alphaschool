@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Media\Console\Commands\PurgeTemporaryMedia;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    // Module-owned commands live under app/Modules/*/Console/Commands,
+    // not app/Console/Commands, so Laravel's default auto-discovery path
+    // does not find them -- registered explicitly here instead.
+    ->withCommands([
+        PurgeTemporaryMedia::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })
