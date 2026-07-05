@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            // docs/DOMAIN_BLUEPRINT.md §8: User is authentication-only
+            // (username/email/phone/password/status/last_login_at) --
+            // no `name` (that's Person's, via PersonName) and no
+            // `email_verified_at` (not part of the Blueprint's field
+            // list; email verification isn't scoped this sprint).
+            // identity-specific columns (person_id, username, phone,
+            // status, last_login_at, is_super_admin, public_id) are
+            // added by a later migration, once `people` exists.
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

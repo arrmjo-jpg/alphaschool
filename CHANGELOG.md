@@ -20,6 +20,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+**Sprint 2.2 (User, Sanctum authentication, account-type derivation):**
+- `App\Modules\Identity\Models\User` relocated from the default `App\Models\User` (an unclaimed `laravel new` scaffold, never an architectural decision) to match Blueprint §1's explicit ownership ("Identity: User accounts, authentication only"). Touched only the `use App\Models\User;` import line in two previously-frozen sprints' tests (`ApprovalEngineTest`, `PrivateMediaAccessTest`, `FakeRoleHolder`) — no test behavior changed; all 124 pre-existing tests still pass. See `docs/developer/identity-auth.md`.
+- `users` schema now matches Blueprint §8 exactly: `username`/`email`/`phone`/`password`/`status`/`last_login_at` + `person_id` (one-way, unique FK to `people`) + `public_id` + `is_super_admin`. Dropped Laravel's default `name`/`email_verified_at` — name belongs to Person, never duplicated onto User.
+- `POST /api/v1/login`/`logout`: token-based Sanctum auth (API tokens for both the admin SPA and the Next.js portal). Wrong password and unknown identifier return an identical error shape; inactive/suspended accounts are rejected even with correct credentials.
+- `App\Modules\Identity\Services\AccountTypeResolver`: account type derived from Person's context rows, never a stored enum — trivial today (no Employee/Student/Guardian exist yet, Sprint 2.4), correct shape now.
+- `Gate::before` Super Admin bypass (`AppServiceProvider`): a true bypass keyed off `is_super_admin`, entirely outside the Role system — proven to cover an ability defined *after* the bypass logic already existed, with zero configuration, per the Playbook's named risk (don't implement this as a per-team role grant).
+- `App\Modules\Identity\Contracts\StepUpAuthentication` + `StepUpAuthenticationService`: real OTP challenge/verify mechanics (generate, store, verify, expire, reject cross-user use) against a verified `Contact` — actual delivery (SMS/email) deferred to the Notifications module, later this phase.
+
 **Sprint 2.1 / Phase 2 (Person, identity documents, contacts, addresses, duplicate detection):**
 - Phase 1 (Core) frozen as of `v0.3-core-media`; Phase 2 (Identity & People Foundation) begins here per `docs/IMPLEMENTATION_PLAYBOOK.md`.
 - `App\Core\Concerns\HasPublicId`: ULID `public_id` generated on `creating()`, used as the route key — the dual-ID convention (Addendum D4) starting with its first real consumer, Person.

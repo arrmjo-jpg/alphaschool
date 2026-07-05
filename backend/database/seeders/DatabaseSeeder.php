@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Modules\Identity\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -17,10 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(ReasonCodeSeeder::class);
 
-        // User::factory(10)->create();
-
         User::factory()->create([
-            'name' => 'Test User',
+            'username' => 'testuser',
             'email' => 'test@example.com',
         ]);
     }

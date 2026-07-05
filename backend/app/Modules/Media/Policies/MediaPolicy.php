@@ -2,7 +2,7 @@
 
 namespace App\Modules\Media\Policies;
 
-use App\Models\User;
+use App\Modules\Identity\Models\User;
 use App\Modules\Media\Models\Media;
 
 /**

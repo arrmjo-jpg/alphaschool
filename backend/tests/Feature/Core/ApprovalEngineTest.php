@@ -1,7 +1,7 @@
 <?php
 
 use App\Core\Services\ApprovalEngine;
-use App\Models\User;
+use App\Modules\Identity\Models\User;
 use Tests\Fixtures\FakeRoleHolder;
 
 function makeUser(): User

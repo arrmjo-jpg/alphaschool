@@ -7,6 +7,8 @@ use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\Services\DuplicateDetectionService;
 use App\Core\ValueObjects\PersonName;
+use Database\Factories\PersonFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -31,6 +33,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Person extends Model implements HasMedia, ReassignsIdentityReferences, RedactsPersonalData
 {
+    use HasFactory;
     use HasPublicId;
     use InteractsWithMedia;
     use LogsActivity;
@@ -53,6 +56,17 @@ class Person extends Model implements HasMedia, ReassignsIdentityReferences, Red
         return [
             'dob' => 'date',
         ];
+    }
+
+    /**
+     * Laravel's default factory-name guesser assumes App\Models\* --
+     * Person lives outside that namespace, so it needs to be told
+     * explicitly, the same reason App\Modules\Media\Models\Media
+     * predates this pattern by never needing a factory at all.
+     */
+    protected static function newFactory(): PersonFactory
+    {
+        return PersonFactory::new();
     }
 
     protected static function booted(): void

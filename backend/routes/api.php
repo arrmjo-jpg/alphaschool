@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,4 +19,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/private-files/{media}', [PrivateMediaController::class, 'show'])
         ->middleware('auth:sanctum')
         ->name('media.private.show');
+
+    Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('/logout', [AuthController::class, 'logout'])
+        ->middleware('auth:sanctum')
+        ->name('auth.logout');
 });

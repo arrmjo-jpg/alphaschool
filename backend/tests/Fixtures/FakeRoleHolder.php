@@ -2,7 +2,7 @@
 
 namespace Tests\Fixtures;
 
-use App\Models\User;
+use App\Modules\Identity\Models\User;
 
 /**
  * Test-only stand-in for a model that has Spatie's hasRole() convention,

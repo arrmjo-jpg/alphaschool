@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Modules\Identity\Models\User;
 use App\Modules\Media\Models\Media;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
