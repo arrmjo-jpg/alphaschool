@@ -20,6 +20,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+**Sprint 2.1 / Phase 2 (Person, identity documents, contacts, addresses, duplicate detection):**
+- Phase 1 (Core) frozen as of `v0.3-core-media`; Phase 2 (Identity & People Foundation) begins here per `docs/IMPLEMENTATION_PLAYBOOK.md`.
+- `App\Core\Concerns\HasPublicId`: ULID `public_id` generated on `creating()`, used as the route key — the dual-ID convention (Addendum D4) starting with its first real consumer, Person.
+- `App\Core\ValueObjects\PersonName` (bilingual first/second/third/family × ar/en, per Blueprint §1/§5) and `IdentityDocumentReference` (document_type + issuing_country + number composite, §5) — both explicitly Core value objects, not People's, so `DuplicateDetectionService` can depend on them without importing Person.
+- `App\Core\Services\DuplicateDetectionService` (+ `DuplicateSignals`/`DuplicateMatchResult` VOs): domain-agnostic fuzzy AR/EN name matching (Latin consonant-skeleton for transliteration variance, normalized-Arabic + edit-distance fallback), weighted scoring across name/DOB/nationality/identity-document signals. Identity-document evidence is structurally required to reach the "certain" tier — name+DOB+nationality alone (exactly what twins share) caps at 70, below the 80-point threshold, so twins can never score as a hard duplicate.
+- `App\Core\Contracts\ReassignsIdentityReferences`/`RedactsPersonalData` (Addendum C3) — minimal signatures now (`reassignPerson`/`anonymizePerson`); the dry-run/preview refinement (Addendum C7) is explicit Sprint 3.2 scope.
+- `App\Modules\People\Models\Person` + migration: bilingual identity, `search_key` (computed + indexed from creation, never an afterthought), `SoftDeletes`, `LogsActivity`, ULID `public_id`, `photo` Media collection (private disk, no branch segment — Person is never branch-scoped per Addendum B6). Implements both Identity Maintenance contracts trivially (reassigns/redacts its own children).
+- `Contact` (verification status, per §5, needed for Sprint 2.2's step-up auth), `Address`, `PersonIdentityDocument` (DB-level unique on the type+country+number triple; a renewal is a new row, never an overwrite) as separate child entities per People module design.
+- `docs/developer/person-identity.md`.
+
 **Sprint 1.3 / Playbook Sprint 1.2.1 (Media Architecture Skeleton):**
 - `config/filesystems.php`: `public`/`private`/`temporary` disks, each env-driven (`local` for dev, `s3`-compatible for Cloudflare R2 in production).
 - `App\Modules\Media\Support\AlphaSchoolPathGenerator` implementing `{tier}/{branch_id}/{model-type}/{model_id}/{collection}/{media_id}-{filename}`; `App\Modules\Media\Contracts\HasBranchScopedMedia` for opt-in branch partitioning (global entities get no branch folder at all).
