@@ -14,6 +14,10 @@ This touched two previously-frozen sprints' test files (`ApprovalEngineTest`, `P
 
 The `person_id` FK couldn't be added in the original `0001_01_01_000000_create_users_table` migration (it runs before `people` exists in migration order), so it's a separate migration run afterward — the same "additive change via a later migration" pattern already used for Media's `sensitivity`/`SoftDeletes` columns in Sprint 1.3, not a schema-fundamental change requiring the base migration itself to move.
 
+### `users.email`/`phone` vs. Person's `Contact` — see ADR-0008
+
+These look like the same kind of data but are two independent concerns that may intentionally differ, governed by `docs/adr/0008-user-login-identifiers-vs-person-contacts.md`. The short version every future module must follow: **read `Contact` (filtered to `verified_at IS NOT NULL`) to actually communicate with a person; read `users.email`/`phone` only to resolve which account a login attempt is for.** Neither side auto-syncs to the other. `StepUpAuthenticationService` already follows this — it requires a verified `Contact`, never `users.email`/`phone`.
+
 ## Login: token-based Sanctum, for both consuming apps
 
 `POST /api/v1/login` accepts `login` (username or email, interchangeably) + `password`, returns a bearer token — no cookie/session SPA flow, since the React admin and Next.js portal may not share a top-level domain. A wrong password and an unknown identifier return the *identical* validation-error shape, so a failed login never reveals whether an account exists. An inactive or suspended account is rejected even with the correct password, checked after credential verification (so the check only ever confirms something an attacker who already has valid credentials could infer anyway).
