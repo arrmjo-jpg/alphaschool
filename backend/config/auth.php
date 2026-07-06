@@ -42,6 +42,18 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Explicit, not just Sanctum's own internally-registered guard --
+        // Spatie Permission's guard resolution (Guard::getNames())
+        // scans config('auth.guards') to decide which guard(s) a Role/
+        // Permission may target, and this app's real traffic is
+        // entirely token-based (docs/DOMAIN_BLUEPRINT.md §8), never
+        // session/web. Roles/Permissions are seeded with
+        // guard_name = 'sanctum' explicitly.
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*

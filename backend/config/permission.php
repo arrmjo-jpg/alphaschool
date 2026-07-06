@@ -1,8 +1,8 @@
 <?php
 
+use App\Modules\Identity\Models\Permission;
+use App\Modules\Identity\Models\Role;
 use Spatie\Permission\DefaultTeamResolver;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 return [
 
@@ -110,7 +110,13 @@ return [
          * foreign key is other than `team_id`.
          */
 
-        'team_foreign_key' => 'team_id',
+        // docs/DOMAIN_BLUEPRINT.md §8: Role assignment is branch-scoped
+        // via Spatie Teams, with `branch_id` as the team column --
+        // enabled now, before any real Role/Permission data exists
+        // (Sprint 2.3), since retrofitting Teams after real assignment
+        // data exists requires rewriting the unique indexes on all
+        // three Spatie pivot tables.
+        'team_foreign_key' => 'branch_id',
     ],
 
     /*
@@ -148,7 +154,7 @@ return [
      * (view the latest version of this package's migration file)
      */
 
-    'teams' => false,
+    'teams' => true,
 
     /*
      * The class to use to resolve the permissions team id

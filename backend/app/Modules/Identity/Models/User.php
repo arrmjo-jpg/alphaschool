@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * Authentication only (docs/DOMAIN_BLUEPRINT.md §8/§15: "Authentication
@@ -25,12 +26,19 @@ use Laravel\Sanctum\HasApiTokens;
  * default `App\Models\User` Laravel scaffolds on `laravel new` was never
  * an intentional placement decision, just an unclaimed default sitting
  * there until Identity's first real sprint.
+ *
+ * HasRoles (Sprint 2.3): Roles are Employee-only, globally defined, but
+ * branch-scoped in *assignment* via Spatie Teams (team_foreign_key =
+ * branch_id) -- direct permission-to-user grants are never exposed
+ * anywhere in this codebase (docs/DOMAIN_BLUEPRINT.md §8: "never
+ * granted directly to a user -- always through a role").
  */
 class User extends Authenticatable
 {
     use HasApiTokens;
     use HasFactory;
     use HasPublicId;
+    use HasRoles;
     use Notifiable;
     use SoftDeletes;
 
