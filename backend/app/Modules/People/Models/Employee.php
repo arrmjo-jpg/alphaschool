@@ -22,7 +22,11 @@ use Spatie\Activitylog\Support\LogOptions;
  * recreated.
  *
  * Never branch-scoped (Addendum B6): branch relevance arrives with
- * employee_branches (Sprint 2.4, Step 4), never a column here.
+ * branch membership owned by Employment (ADR-0005, Phase 6), never a
+ * column here. Deliberately not built as a Sprint 2.4 placeholder --
+ * see the Sprint 2.4 execution plan's Step 4 deferment: building this
+ * persistence model before Employment (its owning aggregate) exists
+ * would be prediction, not promotion (Addendum B1).
  */
 class Employee extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
@@ -49,11 +53,11 @@ class Employee extends Model implements ReassignsIdentityReferences, RedactsPers
 
     /**
      * Trivial per the Sprint 2.4 execution plan: Employee holds only its
-     * own person_id at this point (no child entities exist yet -- see
-     * Step 4 for employee_branches). Assumes the caller (Identity
-     * Maintenance's Merge, Phase 3) has already validated the structural
-     * conflict of both Persons holding an Employee row before calling
-     * this, per Addendum C9.
+     * own person_id at this point (no child entities exist yet --
+     * employee_branches was deferred to Phase 6, see the docblock above).
+     * Assumes the caller (Identity Maintenance's Merge, Phase 3) has
+     * already validated the structural conflict of both Persons holding
+     * an Employee row before calling this, per Addendum C9.
      */
     public function reassignPerson(int $oldPersonId, int $newPersonId): void
     {

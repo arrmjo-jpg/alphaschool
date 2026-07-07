@@ -3,6 +3,9 @@
 namespace App\Modules\Identity\Services;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\People\Models\Employee;
+use App\Modules\People\Models\Guardian;
+use App\Modules\People\Models\Student;
 
 /**
  * Account Type is not stored as an enum (docs/DOMAIN_BLUEPRINT.md §8) --
@@ -11,11 +14,17 @@ use App\Modules\Identity\Models\User;
  * simultaneously (an Employee who is also a Guardian), so this returns
  * every account type that applies, not a single value.
  *
- * Trivial today: Employee/Student/Guardian don't exist yet (Sprint 2.4).
- * Once they do, this method is filled in with the real checks against
- * $user->person -- not redesigned, since the shape (a service returning
- * a list of derived types, never a stored column) is exactly what
- * Sprint 2.4 is meant to build on top of unchanged.
+ * Filled in now that Employee/Student/Guardian exist (Sprint 2.4) --
+ * not redesigned, since the shape (a service returning a list of
+ * derived types, never a stored column) is exactly what Sprint 2.2
+ * built this to be extended into. Each check is a plain, unmemoized
+ * existence query -- no caching, no optimization; if resolving this
+ * repeatedly per request ever becomes a real cost, that is a future,
+ * separately-justified decision, not one made here speculatively.
+ *
+ * Adding a future account type (e.g. Applicant) is one more `exists()`
+ * check and one more constant here -- nothing about User, Person, or
+ * this class's public shape needs to change.
  */
 class AccountTypeResolver
 {
@@ -34,7 +43,22 @@ class AccountTypeResolver
             return [];
         }
 
-        return [];
+        $personId = $user->person->id;
+        $types = [];
+
+        if (Employee::where('person_id', $personId)->exists()) {
+            $types[] = self::TYPE_EMPLOYEE;
+        }
+
+        if (Student::where('person_id', $personId)->exists()) {
+            $types[] = self::TYPE_STUDENT;
+        }
+
+        if (Guardian::where('person_id', $personId)->exists()) {
+            $types[] = self::TYPE_GUARDIAN;
+        }
+
+        return $types;
     }
 
     public function hasAnyAccountType(User $user): bool
