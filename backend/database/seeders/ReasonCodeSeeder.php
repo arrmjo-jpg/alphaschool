@@ -18,12 +18,23 @@ class ReasonCodeSeeder extends Seeder
 {
     public function run(): void
     {
-        // Example of the shape a future module's seeding call will take,
-        // left commented out deliberately -- no real contexts exist yet:
-        //
-        // ReasonCode::updateOrCreate(
-        //     ['context' => 'employment', 'code' => 'retirement'],
-        //     ['label' => ['en' => 'Retirement', 'ar' => 'التقاعد'], 'is_active' => true],
-        // );
+        // People/Family (Sprint 2.5) -- guardian_student is
+        // HasTemporalAssignment's first real production consumer, so
+        // this context's reasons are seeded now, not speculatively:
+        // real ways a guardian_student relationship legitimately ends
+        // (closeAssignment) versus was never valid to begin with
+        // (cancelAssignment).
+        $guardianStudentReasons = [
+            ['code' => 'custody_change', 'label' => ['en' => 'Custody arrangement changed', 'ar' => 'تغيّر ترتيب الحضانة']],
+            ['code' => 'student_withdrawn', 'label' => ['en' => 'Student withdrawn', 'ar' => 'انسحاب الطالب']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($guardianStudentReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'guardian_student_relationship', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
     }
 }

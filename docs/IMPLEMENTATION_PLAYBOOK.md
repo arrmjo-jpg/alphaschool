@@ -257,6 +257,8 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 #### Sprint 2.5 — Family relationships
 
+**Status: COMPLETE, frozen as `v0.8-people-family` (2026-07-12).** All four steps (relationship_types, guardian_student, person_relationships, Household/BillingGroup) implemented, reviewed, and approved individually; `Household`/`BillingGroup` resolved as two independent shells rather than one, a genuine ambiguity the "Scope — IN" line below left open, not a deviation. No further Family-module work unless a real implementation bug, a security issue, or a new approved ADR requires it.
+
 **Goal:** the Family architecture (Blueprint §11) is live: the safety-critical join and the informational graph, correctly separated.
 
 **Scope — IN:** `guardian_student` (relationship_type, `is_primary_contact`, `is_pickup_authorized`, `custody_restriction_notes`, `verified_by`/`verified_at`, effective dates — using `HasTemporalAssignment`); `person_relationships` generic graph; `relationship_type` as a translatable lookup table (not an enum, per the session correction); `households`/`billing_groups` shell (administrator-curated, no Finance consumer yet).
@@ -433,6 +435,20 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 ---
 
+## Designed, Not Yet Scheduled
+
+A dedicated architecture session (2026-07-12, after Phase 2 froze as `v0.7-people-contexts`) produced a frozen design for three concerns not yet assigned a sprint number — the same "design session ahead of its sprint" sequencing already used for Family ahead of Sprint 2.5. Full detail: `docs/DOMAIN_BLUEPRINT.md` Addendum E; `docs/adr/0011`–`0013`; `docs/developer/administration-platform-and-communications.md`.
+
+| Concern | Layer | Earliest plausible trigger | Why not scheduled yet |
+|---|---|---|---|
+| **Administration Platform** | Foundation (new) | Whenever the first real consumer needs Settings/Custom-Fields/Favorites/Import-Export/Audit-Retention as a shared service, rather than a one-off | No Domain module has shipped yet that actually needs any of these — building it now would be prediction, not promotion, the same caution already applied to Custom Fields (Addendum D1) |
+| **Notification Engine (Channel/Provider architecture)** | Foundation (Notifications, already named §1) | Phase 3 (Identity Maintenance's step-up-auth OTP delivery, already stubbed pending this) or Phase 4 (Admissions, per the Blueprint's own note that "Notification + Approval engines are needed once Admissions and HR-adjacent workflows exist") | Real implementation naturally lands once a real transactional trigger exists, not before |
+| **Communications** | Domain (new) | The first genuine audience-broad, cross-module messaging need (a broadcast/campaign use case), likely Phase 4+ once Admissions/Academic have real audiences to compose | Needs at least one Domain module's `Audienceable` contract to exist as a real consumer first |
+
+**This does not change Phase 2's sequence.** Sprint 2.5 (Family relationships) remains the next scheduled sprint, unaffected by and independent of this design work.
+
+---
+
 ## Parallel Development Strategy
 
 **Phases 0–4 are strictly sequential.** They form one dependency chain (tooling → Core → identity substrate → identity integrity → first real business workflow) and splitting them across multiple developers mostly creates integration risk without real speed-up, since each phase's output is a hard input to the next. Best resourced as 1–3 developers working closely, not parallelized.
@@ -463,6 +479,22 @@ Deliberately postponed, with the reasoning that makes it a decision rather than 
 | Hijri calendar display | UI/localization work, whenever it's scheduled | Confirmed as display-only, computed from stored Gregorian dates — no backend dependency, genuinely safe to defer. |
 | Full Document Governance parameter UI (per-collection retention/versioning configurable by an admin, not just by a developer) | Once 3+ modules have real documents with genuinely different retention needs | Code-defined retention per collection is sufficient until there's a proven need for non-developers to adjust it — consistent with the "promotion not prediction" rule applied to UI investment, not just Core code. |
 | Larastan level ratcheting past the Phase 0 baseline | Ongoing, revisited every few phases | Jumping straight to the strictest level on day one against an empty codebase is trivial and not informative — ratchet it as real code accumulates and the team's fluency with the tool grows. |
+| **`Branch` and `Role` lack a physical-deletion guard** (found during Sprint 2.5's `RelationshipType` strengthening, 2026-07-12) | Whenever Sprint 2.3's frozen work is next touched for an unrelated reason — not a standalone sprint | Both are documented as "deactivate via `is_active`, never delete" (Sprint 2.3), but neither actually refuses a plain `->delete()` call at the model layer — the policy is enforced by convention only, the same gap `RelationshipType` had before Sprint 2.5 added a `deleting()` guard + negative test. Not fixed now because Branch/Role belong to already-frozen Sprint 2.3 work, out of scope for Sprint 2.5 — this entry exists so the gap is a recorded decision, not a silently-carried risk. |
+| **`ReasonCode` (Core, Sprint 1.1) has the identical unenforced-deletion gap** (found during Sprint 2.5 Step 2's self-review, 2026-07-12) | Whenever Core's `reason_codes` is next touched for an unrelated reason | Same category as Branch/Role above — `is_active` exists, but nothing stops a physical `->delete()`. `guardian_student.reason_code_id` uses `restrictOnDelete()` at the DB level regardless, so a referenced row can't actually be deleted today, but an *unreferenced* one still can be, silently, with no guard. Not fixed now — `ReasonCode` is Core, frozen since Sprint 1.1, out of scope for a People-module sprint. |
+| **`household_members`/`billing_group_members` assume single-current-membership** (found during Sprint 2.5 Step 4's closing review, 2026-07-12) | If/when a real business need for historical membership tracking arises (a person leaving and rejoining a household, tracked as distinct periods rather than one overwritten fact) | Both pivot tables carry a unique constraint on the FK pair (e.g. `household_id`+`person_id`), assuming membership is a single current fact — join or leave, not a history of periods. Verified (via a throwaway `Pivot`-model proof, not just reasoning) that promoting either pivot to a first-class model with additional columns (role, joined-at, approval workflow, metadata) requires no schema change today, since both already carry their own `id()` primary key and `timestamps()`. The one exception: genuine multi-period history would need the unique constraint loosened — itself a normal additive migration, not a breaking one, but recorded here rather than silently assumed away. |
+---
+
+## High-Priority Core Architecture Backlog
+
+Unlike the Technical Debt Register above (deliberately postponed, low-urgency items), the two entries below are promoted to their own section deliberately — both are real, found-in-production-code gaps in `App\Core\Concerns\HasTemporalAssignment` (Sprint 1.1, frozen), surfaced only once `guardian_student` (Sprint 2.5 Step 2) became the trait's first real consumer. Neither was patched locally in `guardian_student` on purpose: a single consumer working around a shared Core trait's own gap would leave every future consumer (Enrollment, Employment, and every other Assignment-pattern table named in §7) to rediscover and re-fix the identical problem independently — the same reasoning already applied to the `Branch`/`Role`/`ReasonCode` deletion-guard gaps, but higher priority here because both affect data-integrity guarantees the trait's own contract already claims to provide.
+
+**Task: `HasTemporalAssignment` concurrency safety + date-boundary normalization (Core, Sprint 1.1 infrastructure — not Sprint 2.5).**
+
+1. **Concurrency safety.** `guardAgainstOverlap()` is a fetch-then-check-then-write inside an Eloquent `saving()` hook — no row lock, no database-level exclusion constraint. Two concurrent requests creating overlapping periods for the same scope could both pass the check before either write lands, unlike `NumberGeneratorService`'s already-proven `lockForUpdate()` handling. Fix: wrap the competitor-fetch + overlap-check + save in a transaction with `lockForUpdate()` scoped to `temporalScopeAttributes()`.
+2. **Date-boundary normalization.** The trait documents `effective_from`/`effective_until` as `date`-typed and `scopeAsOf()` compares against `Carbon::parse($date)->startOfDay()`, but nothing in the trait enforces that a consumer's stored values are actually day-boundary-normalized — Eloquent's `date` cast only truncates on *display*, not on the raw stored value. `GuardianStudent` (Sprint 2.5 Step 2) found this the hard way and carries a local, model-level mutator fix (`setEffectiveFromAttribute`/`setEffectiveUntilAttribute`) as a stopgap. Every future `HasTemporalAssignment` consumer shares the identical day-granularity semantics (Enrollment, Employment, teacher/committee/route assignments, Fee Plan versions all read as dates, never times, throughout the Blueprint) — this is a missing responsibility of the shared abstraction, not a `GuardianStudent`-specific concern. Fix: move the normalization into `HasTemporalAssignment` itself (e.g. inside `bootHasTemporalAssignment()`), so it is guaranteed centrally rather than re-implemented per consumer.
+3. **Sequencing:** implement both together — they touch the same `saving()` hook and the same trait, and splitting them into two separate changes risks two separate migrations/reviews of the identical code path.
+4. **Cleanup:** once the Core fix ships, remove `GuardianStudent`'s local `setEffectiveFromAttribute`/`setEffectiveUntilAttribute` mutators — they become redundant, and leaving them in place after the trait guarantees the same thing centrally would silently mask whether the Core fix actually covers this model too.
+5. **Proof standard:** both must be proven the same way `NumberGeneratorService`'s concurrency safety was — a genuine dual-connection/dual-process test, not a sequential-loop stand-in — plus a test proving a same-day, post-midnight-created row is correctly included in `active()`/`asOf(today())`.
 
 ---
 

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ReasonCodeSeeder::class);
         $this->call(OrganizationSeeder::class);
         $this->call(PermissionSeeder::class);
+        $this->call(RelationshipTypeSeeder::class);
 
         User::factory()->create([
             'username' => 'testuser',
