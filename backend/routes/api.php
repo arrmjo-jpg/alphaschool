@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Identity\Http\Controllers\MeController;
+use App\Modules\Identity\Http\Controllers\WorkspaceController;
 use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
 use Illuminate\Http\Request;
@@ -25,6 +27,13 @@ Route::prefix('v1')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum')
         ->name('auth.logout');
+
+    // Admin Platform Foundation's backend prerequisite slice (ADR-0015
+    // Decision 7) -- the shell's only two required backend surfaces.
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [MeController::class, 'show'])->name('me');
+        Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    });
 
     // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge
     // UI polish beyond a functional admin screen"). Every write action

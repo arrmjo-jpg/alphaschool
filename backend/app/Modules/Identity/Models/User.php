@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use RuntimeException;
 use Spatie\Permission\Traits\HasRoles;
@@ -87,6 +88,37 @@ class User extends Authenticatable implements ReassignsIdentityReferences, Redac
     public function markLoggedIn(): void
     {
         $this->forceFill(['last_login_at' => now()])->save();
+    }
+
+    /**
+     * The union of permission names across every branch-scoped Role this
+     * User holds, deliberately bypassing Spatie Teams' current-team
+     * scoping (ADR-0015 Decision 7 / Alternatives Considered): the Admin
+     * Platform Foundation has no branch-switcher concept, so `/api/v1/me`
+     * needs a single, complete permission set for coarse nav-gating.
+     * Real per-action authorization always stays each API endpoint's own
+     * Policy, regardless of what this returns.
+     *
+     * @return string[]
+     */
+    public function permissionNamesAcrossBranches(): array
+    {
+        $roleIds = DB::table('model_has_roles')
+            ->where('model_id', $this->id)
+            ->where('model_type', static::class)
+            ->pluck('role_id');
+
+        if ($roleIds->isEmpty()) {
+            return [];
+        }
+
+        return DB::table('role_has_permissions')
+            ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
+            ->whereIn('role_has_permissions.role_id', $roleIds)
+            ->distinct()
+            ->pluck('permissions.name')
+            ->values()
+            ->all();
     }
 
     /**
