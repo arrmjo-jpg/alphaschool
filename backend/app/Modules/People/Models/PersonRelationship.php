@@ -4,6 +4,7 @@ namespace App\Modules\People\Models;
 
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
+use App\Core\ValueObjects\ReassignmentImpact;
 use Database\Factories\PersonRelationshipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -97,11 +98,50 @@ class PersonRelationship extends Model implements ReassignsIdentityReferences, R
      * Person references -- a real reassignment, mirroring Person's own
      * Sprint 2.1 precedent. Both sides are updated independently since a
      * merged Person could appear on either side of a stored row.
+     *
+     * Self-reference exclusion (Sprint 3.2, the same fix DuplicateFlag
+     * needed): if the losing and winning Person already hold a direct
+     * relationship row with each other, a naive reassignment would
+     * collapse both columns onto the same id, violating this model's
+     * own self-relationship guard above. Such a row is excluded from
+     * the update rather than attempted and failed -- the comparison it
+     * represented is moot now that both sides are the same Person, not
+     * an error to raise. $dryRun has nothing to reject: the exclusion
+     * makes real execution self-correcting.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
-        static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
-        static::where('related_person_id', $oldPersonId)->update(['related_person_id' => $newPersonId]);
+        if ($dryRun) {
+            return;
+        }
+
+        static::where('person_id', $oldPersonId)
+            ->where('related_person_id', '!=', $newPersonId)
+            ->update(['person_id' => $newPersonId]);
+
+        static::where('related_person_id', $oldPersonId)
+            ->where('person_id', '!=', $newPersonId)
+            ->update(['related_person_id' => $newPersonId]);
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $impacts = [];
+
+        $asPerson = static::where('person_id', $oldPersonId)->pluck('id')->all();
+        if ($asPerson !== []) {
+            $impacts[] = new ReassignmentImpact(static::class, 'person_id', $asPerson, count($asPerson).' relationship row(s) would move (as person_id).');
+        }
+
+        $asRelated = static::where('related_person_id', $oldPersonId)->pluck('id')->all();
+        if ($asRelated !== []) {
+            $impacts[] = new ReassignmentImpact(static::class, 'related_person_id', $asRelated, count($asRelated).' relationship row(s) would move (as related_person_id).');
+        }
+
+        return $impacts;
     }
 
     /**

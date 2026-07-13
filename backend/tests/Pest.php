@@ -60,3 +60,46 @@ function withTeam(?int $branchId): void
 {
     app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
 }
+
+/**
+ * Real MariaDB connection helpers for genuine dual-connection
+ * concurrency proofs (phpunit.xml forces sqlite for the default
+ * connection, which has no real row-level locking). Shared here, not
+ * per-file, after Sprint 3.2 hit the identical "two test files each
+ * declare their own copy" fatal-redeclaration problem a second time
+ * (see withTeam() above) -- moved out of
+ * tests/Feature/Core/NumberGeneratorConcurrencyTest.php once a second
+ * consumer (Sprint 3.2's merge execution-locking test) needed the same
+ * helpers.
+ */
+function realMariadbCredentialsFromDotEnv(): ?array
+{
+    $path = base_path('.env');
+    if (! file_exists($path)) {
+        return null;
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $values = [];
+    foreach ($lines as $line) {
+        if (preg_match('/^(DB_HOST|DB_PORT|DB_DATABASE|DB_USERNAME|DB_PASSWORD)=(.*)$/', $line, $m)) {
+            $values[$m[1]] = trim($m[2], "\"' ");
+        }
+    }
+
+    return isset($values['DB_HOST'], $values['DB_DATABASE'], $values['DB_USERNAME']) ? $values : null;
+}
+
+function openRealMariadbPdo(array $credentials): ?PDO
+{
+    try {
+        return new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s', $credentials['DB_HOST'], $credentials['DB_PORT'] ?? 3306, $credentials['DB_DATABASE']),
+            $credentials['DB_USERNAME'],
+            $credentials['DB_PASSWORD'] ?? '',
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+        );
+    } catch (PDOException) {
+        return null;
+    }
+}

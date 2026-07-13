@@ -3,6 +3,12 @@
 namespace App\Providers;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\IdentityMaintenance\Models\MergeRequest;
+use App\Modules\IdentityMaintenance\Policies\MergeRequestPolicy;
+use App\Modules\IdentityMaintenance\Support\ApprovalRoutingResolver;
+use App\Modules\IdentityMaintenance\Support\MergeFieldResolver;
+use App\Modules\IdentityMaintenance\Support\SingleRoleApprovalRoutingResolver;
+use App\Modules\IdentityMaintenance\Support\WinningPersonAlwaysWinsFieldResolver;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Policies\MediaPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -15,7 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Sprint 3.2 -- bound here, not resolved by convention, so
+        // swapping either default implementation later (a multi-role
+        // ApprovalRoutingResolver, a richer MergeFieldResolver) is a
+        // one-line change, never a MergeOrchestrationService edit.
+        $this->app->bind(ApprovalRoutingResolver::class, SingleRoleApprovalRoutingResolver::class);
+        $this->app->bind(MergeFieldResolver::class, WinningPersonAlwaysWinsFieldResolver::class);
     }
 
     /**
@@ -28,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         // (which only looks at App\Models by convention) will not find
         // App\Modules\Media\Policies\MediaPolicy on its own.
         Gate::policy(Media::class, MediaPolicy::class);
+        Gate::policy(MergeRequest::class, MergeRequestPolicy::class);
 
         // docs/DOMAIN_BLUEPRINT.md §8: Super Admin is a Gate::before
         // bypass keyed off an account flag, entirely outside the Role

@@ -83,6 +83,12 @@ class PermissionSeeder extends Seeder
             // role(s) should hold that authority is a business decision,
             // not one this seeder makes on the business's behalf.
             'identity.review-duplicates' => ['group' => 'identity-governance', 'name' => ['en' => 'Review Duplicate Persons', 'ar' => 'مراجعة الأشخاص المكررين']],
+            // Sprint 3.2 -- distinct from review-duplicates now that
+            // MergeRequest.duplicate_flag_id is optional (manual/API/
+            // import-driven merges don't imply a reviewed flag exists).
+            // Requesting a merge stays ordinary registrar work; approving
+            // one is the separate, higher-stakes authority below.
+            'identity.request-merge' => ['group' => 'identity-governance', 'name' => ['en' => 'Request Person Merge', 'ar' => 'طلب دمج الأشخاص']],
             'identity.approve-merge' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Merge', 'ar' => 'اعتماد دمج الأشخاص']],
             'identity.approve-anonymization' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Anonymization', 'ar' => 'اعتماد إخفاء هوية الشخص']],
         ];
@@ -125,7 +131,7 @@ class PermissionSeeder extends Seeder
                 // candidate pair is ordinary registrar work; approving an
                 // actual Merge/Anonymization is the higher-stakes,
                 // four-eyes authority C10 deliberately keeps separate.
-                'permissions' => ['people.view', 'people.create', 'people.update', 'identity.review-duplicates'],
+                'permissions' => ['people.view', 'people.create', 'people.update', 'identity.review-duplicates', 'identity.request-merge'],
             ],
             'teacher' => [
                 'display_name' => ['en' => 'Teacher', 'ar' => 'معلم'],

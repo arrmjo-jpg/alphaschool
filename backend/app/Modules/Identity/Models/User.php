@@ -5,6 +5,7 @@ namespace App\Modules\Identity\Models;
 use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
+use App\Core\ValueObjects\ReassignmentImpact;
 use App\Modules\People\Models\Person;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use RuntimeException;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -88,19 +90,39 @@ class User extends Authenticatable implements ReassignsIdentityReferences, Redac
     }
 
     /**
-     * A genuine gap closed this sprint (found by the new schema
+     * A genuine gap closed in Sprint 3.1 (found by the new schema
      * scanner, not previously implemented): person_id is unique
-     * (one User account per Person), so at most one row matches --
-     * a plain, unconditional update, identical in shape to every other
-     * module's reassignPerson(). If both the losing and winning Person
-     * already hold a User row, this throws on the unique constraint --
-     * correct behavior, since that structural conflict must already
-     * have been validated by Identity Maintenance before calling this
-     * (ADR-0009), not defended against here.
+     * (one User account per Person). Structural validity is now
+     * self-checked via $dryRun (Sprint 3.2) rather than assumed
+     * pre-validated by an external caller.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
+        if ($dryRun) {
+            if (static::where('person_id', $newPersonId)->exists()) {
+                throw new RuntimeException(
+                    "User: person #{$newPersonId} already holds a User row -- reassigning person #{$oldPersonId} would violate the unique person_id constraint."
+                );
+            }
+
+            return;
+        }
+
         static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $ids = static::where('person_id', $oldPersonId)->pluck('id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return [new ReassignmentImpact(static::class, 'person_id', $ids, 'The User account would move.')];
     }
 
     /**

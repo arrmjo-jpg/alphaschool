@@ -6,6 +6,7 @@ use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\Services\DuplicateDetectionService;
+use App\Core\ValueObjects\ReassignmentImpact;
 use App\Modules\Identity\Models\User;
 use App\Modules\People\Models\Person;
 use Database\Factories\DuplicateFlagFactory;
@@ -38,10 +39,9 @@ use Spatie\Activitylog\Support\LogOptions;
  *
  * Implements both Identity Maintenance contracts itself -- this table
  * directly references two People, so a Person merge affecting either
- * side must be reassignable the same way any other Person-referencing
- * table is (ADR-0009: Identity Maintenance validates structural safety
- * before calling this; the implementation stays a plain, unconditional
- * move).
+ * side must be reassignable. Not a plain, unconditional move (Sprint
+ * 3.2 found and fixed a self-reference edge case -- see
+ * reassignPerson()'s own docblock).
  */
 class DuplicateFlag extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
@@ -55,6 +55,16 @@ class DuplicateFlag extends Model implements ReassignsIdentityReferences, Redact
     public const STATUS_MERGE_CANDIDATE = 'merge_candidate';
 
     public const STATUS_DISMISSED = 'dismissed';
+
+    /**
+     * Sprint 3.2: the terminal state for the flag that originated a
+     * successful merge, distinct from merge_candidate (flagged, not yet
+     * executed). Set by MergeOrchestrationService::execute() on the
+     * originating flag only -- other flags referencing either merged
+     * Person are handled generically by reassignPerson() below, not by
+     * this status.
+     */
+    public const STATUS_MERGED = 'merged';
 
     protected $fillable = [
         'source_person_id',
@@ -116,10 +126,52 @@ class DuplicateFlag extends Model implements ReassignsIdentityReferences, Redact
         return $this->belongsTo(User::class, 'resolved_by_id');
     }
 
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    /**
+     * Self-reference exclusion (Sprint 3.2): if this flag is the one
+     * that originated the merge (structurally: source=losing,
+     * candidate=winning, or vice versa), a naive reassignment would
+     * collapse both columns onto the winning Person, violating this
+     * model's own self-reference guard above. Such a row is excluded
+     * from the update rather than attempted and failed -- the
+     * comparison it represented is moot now that both sides are the
+     * same Person. MergeOrchestrationService::execute() handles the
+     * originating flag's own lifecycle separately (STATUS_MERGED)
+     * before this runs. $dryRun has nothing to reject: the exclusion
+     * makes real execution self-correcting.
+     */
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
-        static::where('source_person_id', $oldPersonId)->update(['source_person_id' => $newPersonId]);
-        static::where('candidate_person_id', $oldPersonId)->update(['candidate_person_id' => $newPersonId]);
+        if ($dryRun) {
+            return;
+        }
+
+        static::where('source_person_id', $oldPersonId)
+            ->where('candidate_person_id', '!=', $newPersonId)
+            ->update(['source_person_id' => $newPersonId]);
+
+        static::where('candidate_person_id', $oldPersonId)
+            ->where('source_person_id', '!=', $newPersonId)
+            ->update(['candidate_person_id' => $newPersonId]);
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $impacts = [];
+
+        $asSource = static::where('source_person_id', $oldPersonId)->pluck('id')->all();
+        if ($asSource !== []) {
+            $impacts[] = new ReassignmentImpact(static::class, 'source_person_id', $asSource, count($asSource).' flag(s) would move (as source_person_id).');
+        }
+
+        $asCandidate = static::where('candidate_person_id', $oldPersonId)->pluck('id')->all();
+        if ($asCandidate !== []) {
+            $impacts[] = new ReassignmentImpact(static::class, 'candidate_person_id', $asCandidate, count($asCandidate).' flag(s) would move (as candidate_person_id).');
+        }
+
+        return $impacts;
     }
 
     /**

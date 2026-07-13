@@ -5,11 +5,13 @@ namespace App\Modules\People\Models;
 use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
+use App\Core\ValueObjects\ReassignmentImpact;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use RuntimeException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -55,15 +57,39 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
     /**
      * Trivial per the Sprint 2.4 execution plan and the architectural
      * clarification agreed for Employee: Student holds only its own
-     * person_id at this point. Assumes the caller (Identity
-     * Maintenance's Merge, Phase 3) has already validated the
-     * structural conflict of both Persons holding a Student row, and
-     * that it will be called at most once per successful merge --
-     * Student does not defend against either case itself.
+     * person_id at this point. It is still called at most once per
+     * successful merge (ADR-0009 -- Identity Maintenance guarantees
+     * this, Student does not defend against it itself), but structural
+     * validity is now self-checked here via $dryRun (Sprint 3.2),
+     * rather than assumed pre-validated by an external caller.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
+        if ($dryRun) {
+            if (static::where('person_id', $newPersonId)->exists()) {
+                throw new RuntimeException(
+                    "Student: person #{$newPersonId} already holds a Student row -- reassigning person #{$oldPersonId} would violate the unique person_id constraint."
+                );
+            }
+
+            return;
+        }
+
         static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $ids = static::where('person_id', $oldPersonId)->pluck('id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return [new ReassignmentImpact(static::class, 'person_id', $ids, 'The Student row would move.')];
     }
 
     /**

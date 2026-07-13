@@ -6,6 +6,7 @@ use App\Core\Concerns\HasPublicId;
 use App\Core\Concerns\HasTemporalAssignment;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
+use App\Core\ValueObjects\ReassignmentImpact;
 use App\Modules\Identity\Models\User;
 use Carbon\Carbon;
 use Database\Factories\GuardianStudentFactory;
@@ -189,9 +190,19 @@ class GuardianStudent extends Model implements ReassignsIdentityReferences, Reda
      * (Addendum C11) precisely so this reasoning is recorded rather than
      * the column silently going unexamined.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
-        // Intentionally empty -- see docblock above.
+        // Intentionally empty -- see docblock above. Nothing here can
+        // ever be structurally invalid with respect to a Person merge,
+        // so $dryRun is always a no-op success too.
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        return [];
     }
 
     /**

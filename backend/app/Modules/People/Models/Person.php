@@ -7,6 +7,7 @@ use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\Services\DuplicateDetectionService;
 use App\Core\ValueObjects\PersonName;
+use App\Core\ValueObjects\ReassignmentImpact;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -130,18 +131,66 @@ class Person extends Model implements HasMedia, ReassignsIdentityReferences, Red
     }
 
     /**
-     * Trivial per Addendum C3/the Playbook's Sprint 2.1 scope: at this
-     * point in the build, Person's own children (contacts, addresses,
-     * identity documents) are the only things that need reassigning --
-     * Employee/Student/Guardian implement their own copies of this
-     * contract once they exist (Sprint 2.4) and have their own
-     * references to move.
+     * Cascades to every owned child (Contact, Address,
+     * PersonIdentityDocument, Media) -- none of which are individually
+     * registered with Identity Maintenance (OwnedByAggregate, Sprint
+     * 3.1). No structural conflict is possible for any of these (a
+     * Person may hold arbitrarily many contacts/addresses/documents),
+     * so $dryRun is always a no-op success here.
+     *
+     * Media reassociation (Sprint 3.2) is owned entirely here, per the
+     * People/Media boundary -- Identity Maintenance calls this method
+     * and has no knowledge that a `photo` collection, or any collection
+     * name, exists. Rule matches the Merge Strategy's own "winning
+     * wins" default: if the winning Person already has a photo, the
+     * losing Person's stays attached to the (soft-deleted) losing
+     * Person -- never deleted, never overwritten.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
+        if ($dryRun) {
+            return;
+        }
+
         Contact::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
         Address::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
         PersonIdentityDocument::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+
+        $losingPerson = static::find($oldPersonId);
+        $winningPerson = static::find($newPersonId);
+
+        if ($losingPerson !== null && $winningPerson !== null && ! $winningPerson->hasMedia('photo')) {
+            $losingPhoto = $losingPerson->getFirstMedia('photo');
+
+            if ($losingPhoto !== null) {
+                $losingPhoto->model_id = $winningPerson->id;
+                $losingPhoto->save();
+            }
+        }
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $impacts = [];
+
+        foreach (['contacts' => Contact::class, 'addresses' => Address::class, 'identity documents' => PersonIdentityDocument::class] as $label => $class) {
+            $ids = $class::where('person_id', $oldPersonId)->pluck('id')->all();
+
+            if ($ids !== []) {
+                $impacts[] = new ReassignmentImpact($class, 'person_id', $ids, count($ids)." {$label} would move.");
+            }
+        }
+
+        $losingPerson = static::find($oldPersonId);
+
+        if ($losingPerson !== null && $losingPerson->hasMedia('photo')) {
+            $impacts[] = new ReassignmentImpact(static::class, 'photo', [$losingPerson->getFirstMedia('photo')->id], 'Photo would move only if the winning Person has none.');
+        }
+
+        return $impacts;
     }
 
     /**

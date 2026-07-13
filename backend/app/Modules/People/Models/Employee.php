@@ -5,11 +5,13 @@ namespace App\Modules\People\Models;
 use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
+use App\Core\ValueObjects\ReassignmentImpact;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use RuntimeException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -55,13 +57,41 @@ class Employee extends Model implements ReassignsIdentityReferences, RedactsPers
      * Trivial per the Sprint 2.4 execution plan: Employee holds only its
      * own person_id at this point (no child entities exist yet --
      * employee_branches was deferred to Phase 6, see the docblock above).
-     * Assumes the caller (Identity Maintenance's Merge, Phase 3) has
-     * already validated the structural conflict of both Persons holding
-     * an Employee row before calling this, per Addendum C9.
+     *
+     * Structural-conflict self-check (Addendum C9, Sprint 3.2): person_id
+     * is unique, so if the winning Person already holds an Employee row,
+     * reassigning the losing Person's row would violate that constraint.
+     * $dryRun surfaces this before Identity Maintenance ever attempts a
+     * real write, rather than assuming an external caller already
+     * checked it.
      */
-    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    public function reassignPerson(int $oldPersonId, int $newPersonId, bool $dryRun = false): void
     {
+        if ($dryRun) {
+            if (static::where('person_id', $newPersonId)->exists()) {
+                throw new RuntimeException(
+                    "Employee: person #{$newPersonId} already holds an Employee row -- reassigning person #{$oldPersonId} would violate the unique person_id constraint."
+                );
+            }
+
+            return;
+        }
+
         static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+    }
+
+    /**
+     * @return ReassignmentImpact[]
+     */
+    public function previewReassignment(int $oldPersonId, int $newPersonId): array
+    {
+        $ids = static::where('person_id', $oldPersonId)->pluck('id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return [new ReassignmentImpact(static::class, 'person_id', $ids, 'The Employee row would move.')];
     }
 
     /**

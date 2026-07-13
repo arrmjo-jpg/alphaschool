@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +25,22 @@ Route::prefix('v1')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum')
         ->name('auth.logout');
+
+    // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge
+    // UI polish beyond a functional admin screen"). Every write action
+    // is Policy-gated inside the controller; step-level approval
+    // eligibility is ApprovalEngine's own job.
+    Route::middleware('auth:sanctum')->prefix('merge-requests')->name('merge-requests.')->group(function () {
+        Route::post('/', [MergeRequestController::class, 'store'])->name('store');
+        Route::get('/{mergeRequest}/preview', [MergeRequestController::class, 'preview'])->name('preview');
+        Route::post('/{mergeRequest}/dry-run', [MergeRequestController::class, 'dryRun'])->name('dry-run');
+        Route::post('/{mergeRequest}/request-approval', [MergeRequestController::class, 'requestApproval'])->name('request-approval');
+        Route::post('/{mergeRequest}/approve', [MergeRequestController::class, 'approve'])->name('approve');
+        Route::post('/{mergeRequest}/reject', [MergeRequestController::class, 'reject'])->name('reject');
+        Route::post('/{mergeRequest}/execute', [MergeRequestController::class, 'execute'])->name('execute');
+        Route::post('/{mergeRequest}/request-rollback', [MergeRequestController::class, 'requestRollback'])->name('request-rollback');
+        Route::post('/{mergeRequest}/approve-rollback', [MergeRequestController::class, 'approveRollback'])->name('approve-rollback');
+        Route::post('/{mergeRequest}/reject-rollback', [MergeRequestController::class, 'rejectRollback'])->name('reject-rollback');
+        Route::post('/{mergeRequest}/rollback', [MergeRequestController::class, 'rollback'])->name('rollback');
+    });
 });

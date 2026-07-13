@@ -24,39 +24,11 @@ use Illuminate\Support\Facades\DB;
  * per docs/IMPLEMENTATION_PLAYBOOK.md's Sprint 1.1.2 note that a naive
  * implementation "looks correct under single-developer testing and
  * silently fails in production."
+ *
+ * realMariadbCredentialsFromDotEnv()/openRealMariadbPdo() live in
+ * tests/Pest.php, shared with Sprint 3.2's merge execution-locking
+ * concurrency test -- not redeclared here.
  */
-function realMariadbCredentialsFromDotEnv(): ?array
-{
-    $path = base_path('.env');
-    if (! file_exists($path)) {
-        return null;
-    }
-
-    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $values = [];
-    foreach ($lines as $line) {
-        if (preg_match('/^(DB_HOST|DB_PORT|DB_DATABASE|DB_USERNAME|DB_PASSWORD)=(.*)$/', $line, $m)) {
-            $values[$m[1]] = trim($m[2], "\"' ");
-        }
-    }
-
-    return isset($values['DB_HOST'], $values['DB_DATABASE'], $values['DB_USERNAME']) ? $values : null;
-}
-
-function openRealMariadbPdo(array $credentials): ?PDO
-{
-    try {
-        return new PDO(
-            sprintf('mysql:host=%s;port=%s;dbname=%s', $credentials['DB_HOST'], $credentials['DB_PORT'] ?? 3306, $credentials['DB_DATABASE']),
-            $credentials['DB_USERNAME'],
-            $credentials['DB_PASSWORD'] ?? '',
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-        );
-    } catch (PDOException) {
-        return null;
-    }
-}
-
 beforeEach(function () {
     $this->credentials = realMariadbCredentialsFromDotEnv();
     $this->pdo = $this->credentials ? openRealMariadbPdo($this->credentials) : null;

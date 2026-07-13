@@ -307,6 +307,8 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 #### Sprint 3.2 — Merge: Preview, Dry Run, Execute, Rollback
 
+**Status: COMPLETE, frozen as `v1.0-identity-maintenance-merge` (2026-07-13).** See `docs/adr/0014-person-merge-architecture.md` and `docs/developer/person-merge.md` for the full architecture, including several refinements settled during design review before implementation began: `ApprovalEngine` stays generic (a new `ApprovalRoutingResolver` adapter, not a Core change); `MergeRequest.duplicate_flag_id` is nullable (manual/API/import merges supported, not only flag-originated ones); a dedicated `MergeFieldResolver` abstraction for field-by-field conflict resolution; the full state machine (15 states, every transition explicit and enforced by the model itself); rollback requires the same approval discipline as the merge.
+
 **Goal:** the highest-stakes operation in the system, built exactly to the spec validated in Addendum C7–C9.
 
 **Scope — IN:** `MergeRequest` aggregate + `merge_reassignment_log` child; `previewReassignment`/`reassignPerson` contract methods with a `$dryRun` parameter (not a wrapped-and-rolled-back transaction — a real parameter every implementing module respects); `canReassignPerson` validation contract (structural conflicts owned by Identity Maintenance directly; domain vetoes delegated to owning modules — though at this point in the timeline, only People's own structural checks have real implementations, since Academic/HR/Finance don't exist yet to veto anything); mandatory Approval-Engine gating with no self-approval, even for Super Admin; rollback using the reassignment log.
