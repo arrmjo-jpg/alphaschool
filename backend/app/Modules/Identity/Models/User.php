@@ -3,6 +3,8 @@
 namespace App\Modules\Identity\Models;
 
 use App\Core\Concerns\HasPublicId;
+use App\Core\Contracts\ReassignsIdentityReferences;
+use App\Core\Contracts\RedactsPersonalData;
 use App\Modules\People\Models\Person;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,7 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
  * anywhere in this codebase (docs/DOMAIN_BLUEPRINT.md §8: "never
  * granted directly to a user -- always through a role").
  */
-class User extends Authenticatable
+class User extends Authenticatable implements ReassignsIdentityReferences, RedactsPersonalData
 {
     use HasApiTokens;
     use HasFactory;
@@ -83,5 +85,46 @@ class User extends Authenticatable
     public function markLoggedIn(): void
     {
         $this->forceFill(['last_login_at' => now()])->save();
+    }
+
+    /**
+     * A genuine gap closed this sprint (found by the new schema
+     * scanner, not previously implemented): person_id is unique
+     * (one User account per Person), so at most one row matches --
+     * a plain, unconditional update, identical in shape to every other
+     * module's reassignPerson(). If both the losing and winning Person
+     * already hold a User row, this throws on the unique constraint --
+     * correct behavior, since that structural conflict must already
+     * have been validated by Identity Maintenance before calling this
+     * (ADR-0009), not defended against here.
+     */
+    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    {
+        static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+    }
+
+    /**
+     * username/email are NOT NULL + unique, so redaction uses the row's
+     * own id to stay unique rather than a fixed literal (which would
+     * collide the second time this ever runs). phone is nullable and
+     * simply cleared. Deliberately does not touch `status` -- whether
+     * an anonymized account should also become unusable is a business
+     * workflow decision for the future Anonymization request (Sprint
+     * 3.3), not something this trivial per-model contract implementation
+     * should decide unilaterally.
+     */
+    public function anonymizePerson(int $personId): void
+    {
+        $user = static::where('person_id', $personId)->first();
+
+        if ($user === null) {
+            return;
+        }
+
+        $user->forceFill([
+            'username' => "redacted-{$user->id}",
+            'email' => "redacted-{$user->id}@redacted.invalid",
+            'phone' => null,
+        ])->save();
     }
 }

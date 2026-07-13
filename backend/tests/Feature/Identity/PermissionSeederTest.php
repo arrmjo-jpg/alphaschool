@@ -42,7 +42,11 @@ it('grants the registrar role real people permissions, and leaves teacher/hr_man
     $teacher = Role::where('name', 'teacher')->firstOrFail();
 
     expect($registrar->permissions()->pluck('name')->all())
-        ->toEqual(['people.view', 'people.create', 'people.update'])
+        // identity.review-duplicates added Sprint 3.1 (Addendum C10) --
+        // ordinary registrar work, distinct from the higher-stakes
+        // identity.approve-merge/approve-anonymization the same
+        // Identity Governance group seeds but assigns to no role yet.
+        ->toEqual(['people.view', 'people.create', 'people.update', 'identity.review-duplicates'])
         ->and($teacher->permissions()->count())->toBe(0);
 });
 

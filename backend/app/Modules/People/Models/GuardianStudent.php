@@ -4,6 +4,8 @@ namespace App\Modules\People\Models;
 
 use App\Core\Concerns\HasPublicId;
 use App\Core\Concerns\HasTemporalAssignment;
+use App\Core\Contracts\ReassignsIdentityReferences;
+use App\Core\Contracts\RedactsPersonalData;
 use App\Modules\Identity\Models\User;
 use Carbon\Carbon;
 use Database\Factories\GuardianStudentFactory;
@@ -43,7 +45,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * than one deferred, correct one); tracked in
  * docs/IMPLEMENTATION_PLAYBOOK.md's Technical Debt Register instead.
  */
-class GuardianStudent extends Model
+class GuardianStudent extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
     use HasFactory;
     use HasPublicId;
@@ -173,6 +175,38 @@ class GuardianStudent extends Model
     public function temporalReasonContext(): string
     {
         return 'guardian_student_relationship';
+    }
+
+    /**
+     * A deliberate no-op, not an oversight: guardian_id/student_id
+     * reference Guardian's and Student's own stable internal ids, never
+     * a Person id directly. When a Person merge affects someone who is
+     * a Guardian or Student, Guardian::reassignPerson()/
+     * Student::reassignPerson() already update that aggregate's own
+     * person_id column at its own layer -- Guardian/Student's row id
+     * (and therefore this table's guardian_id/student_id values) never
+     * changes, so there is nothing here to reassign. Declared explicitly
+     * (Addendum C11) precisely so this reasoning is recorded rather than
+     * the column silently going unexamined.
+     */
+    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    {
+        // Intentionally empty -- see docblock above.
+    }
+
+    /**
+     * A deliberate no-op: this row holds no personally-identifying field
+     * of its own tied directly to a Person id (guardian_id/student_id
+     * are Guardian/Student references, handled at their own layer).
+     * custody_restriction_notes is free text that could incidentally
+     * contain PII, but redacting free-text note content is a distinct,
+     * unbuilt governance feature (the same boundary already noted for
+     * Universal Notes, Addendum D3) -- not something anonymizePerson()
+     * silently attempts here.
+     */
+    public function anonymizePerson(int $personId): void
+    {
+        // Intentionally empty -- see docblock above.
     }
 
     public function getActivitylogOptions(): LogOptions

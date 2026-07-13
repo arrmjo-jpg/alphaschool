@@ -2,6 +2,7 @@
 
 namespace App\Modules\People\Models;
 
+use App\Core\Contracts\OwnedByAggregate;
 use App\Core\ValueObjects\IdentityDocumentReference;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Distinguishes real-world reissues from data-entry corrections (typo
  * fixes to an existing row, protected by Activitylog + a required reason
  * -- Phase 3's Identity Correction tiering, not built here).
+ *
+ * OwnedByAggregate, not ReassignsIdentityReferences/RedactsPersonalData
+ * directly: Person::reassignPerson() already cascades to this table
+ * (Sprint 2.1) -- Identity Maintenance calls Person, the aggregate
+ * root, never this child entity independently.
  */
-class PersonIdentityDocument extends Model
+class PersonIdentityDocument extends Model implements OwnedByAggregate
 {
     use SoftDeletes;
 
@@ -49,5 +55,10 @@ class PersonIdentityDocument extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public static function owningAggregate(): string
+    {
+        return Person::class;
     }
 }

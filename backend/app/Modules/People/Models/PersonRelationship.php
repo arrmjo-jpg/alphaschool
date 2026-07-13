@@ -2,6 +2,8 @@
 
 namespace App\Modules\People\Models;
 
+use App\Core\Contracts\ReassignsIdentityReferences;
+use App\Core\Contracts\RedactsPersonalData;
 use Database\Factories\PersonRelationshipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,7 +41,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * explicitly defers past this sprint. This model only guarantees the
  * row is discoverable querying from either side.
  */
-class PersonRelationship extends Model
+class PersonRelationship extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
     use HasFactory;
     use LogsActivity;
@@ -88,6 +90,29 @@ class PersonRelationship extends Model
     public function relationshipType(): BelongsTo
     {
         return $this->belongsTo(RelationshipType::class);
+    }
+
+    /**
+     * Unlike GuardianStudent, person_id/related_person_id are direct
+     * Person references -- a real reassignment, mirroring Person's own
+     * Sprint 2.1 precedent. Both sides are updated independently since a
+     * merged Person could appear on either side of a stored row.
+     */
+    public function reassignPerson(int $oldPersonId, int $newPersonId): void
+    {
+        static::where('person_id', $oldPersonId)->update(['person_id' => $newPersonId]);
+        static::where('related_person_id', $oldPersonId)->update(['related_person_id' => $newPersonId]);
+    }
+
+    /**
+     * A deliberate no-op: this row holds no personally-identifying field
+     * of its own beyond the Person references themselves, which
+     * anonymization does not remove (the relationship fact, e.g. "these
+     * two were siblings," is not PII in the sense this contract targets).
+     */
+    public function anonymizePerson(int $personId): void
+    {
+        // Intentionally empty -- see docblock above.
     }
 
     public function getActivitylogOptions(): LogOptions

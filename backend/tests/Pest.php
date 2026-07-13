@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /*
@@ -47,4 +48,15 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Sets Spatie Teams' active branch context for role/permission checks
+ * in tests -- shared here (not per-file) after Sprint 3.1 discovered
+ * two independently-written test files both declaring their own copy,
+ * which PHP cannot load together (fatal redeclaration error).
+ */
+function withTeam(?int $branchId): void
+{
+    app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
 }

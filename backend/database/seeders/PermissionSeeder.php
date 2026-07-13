@@ -35,6 +35,11 @@ class PermissionSeeder extends Seeder
         $definitions = [
             'identity' => ['sort_order' => 1, 'icon' => 'shield', 'name' => ['en' => 'Identity & Access', 'ar' => 'الهوية والصلاحيات']],
             'people' => ['sort_order' => 2, 'icon' => 'users', 'name' => ['en' => 'People', 'ar' => 'الأشخاص']],
+            // Deliberately separate from 'identity' -- Addendum C10: "not
+            // generic admin access". Merge/Anonymization approval and
+            // Duplicate Resolution review sit behind their own dedicated
+            // group, never folded into ordinary Identity & Access grants.
+            'identity-governance' => ['sort_order' => 3, 'icon' => 'shield-check', 'name' => ['en' => 'Identity Governance', 'ar' => 'حوكمة الهوية']],
         ];
 
         $groups = [];
@@ -70,6 +75,16 @@ class PermissionSeeder extends Seeder
             'people.view' => ['group' => 'people', 'name' => ['en' => 'View People', 'ar' => 'عرض الأشخاص']],
             'people.create' => ['group' => 'people', 'name' => ['en' => 'Create People', 'ar' => 'إنشاء الأشخاص']],
             'people.update' => ['group' => 'people', 'name' => ['en' => 'Update People', 'ar' => 'تعديل الأشخاص']],
+            // Addendum C10 -- named explicitly in the Blueprint text.
+            // identity.review-duplicates is enforced this sprint
+            // (DuplicateResolutionService); approve-merge/
+            // approve-anonymization are seeded now as vocabulary only --
+            // real enforcement arrives with Sprint 3.2/3.3, and which
+            // role(s) should hold that authority is a business decision,
+            // not one this seeder makes on the business's behalf.
+            'identity.review-duplicates' => ['group' => 'identity-governance', 'name' => ['en' => 'Review Duplicate Persons', 'ar' => 'مراجعة الأشخاص المكررين']],
+            'identity.approve-merge' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Merge', 'ar' => 'اعتماد دمج الأشخاص']],
+            'identity.approve-anonymization' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Anonymization', 'ar' => 'اعتماد إخفاء هوية الشخص']],
         ];
 
         $permissions = [];
@@ -105,7 +120,12 @@ class PermissionSeeder extends Seeder
             ],
             'registrar' => [
                 'display_name' => ['en' => 'Registrar', 'ar' => 'أمين السجلات'],
-                'permissions' => ['people.view', 'people.create', 'people.update'],
+                // identity.review-duplicates specifically, not approve-
+                // merge/approve-anonymization -- reviewing a flagged
+                // candidate pair is ordinary registrar work; approving an
+                // actual Merge/Anonymization is the higher-stakes,
+                // four-eyes authority C10 deliberately keeps separate.
+                'permissions' => ['people.view', 'people.create', 'people.update', 'identity.review-duplicates'],
             ],
             'teacher' => [
                 'display_name' => ['en' => 'Teacher', 'ar' => 'معلم'],

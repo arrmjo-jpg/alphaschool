@@ -285,6 +285,8 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 #### Sprint 3.1 — Contract governance + Duplicate Resolution
 
+**Status: COMPLETE, frozen as `v0.9-identity-maintenance-detection` (2026-07-13).** All scope items delivered and reviewed; two real gaps in already-frozen code (Sprint 2.4/2.5's `GuardianStudent`/`PersonRelationship`, and Sprint 2.2's `User`) were found by the new scanner and fixed as architectural compliance corrections, not reopenings of those sprints. See `docs/developer/identity-maintenance-contract-governance.md`.
+
 **Goal:** the module-contract discipline (Addendum C11) is enforced by CI, and the Duplicate Resolution workflow (distinct from the Detection algorithm built in Phase 2) is live.
 
 **Scope — IN:** architecture test scanning every module's schema for columns plausibly referencing Person (`*_person_id`, `student_id`, `employee_id`, `guardian_id`) and failing CI if a module hasn't declared its contract status; `DuplicateFlag` workflow (review a flagged candidate pair, resolve as merge-candidate or dismiss); Identity Governance Permission Group.
@@ -293,11 +295,13 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 **Dependencies:** Phase 2 complete (needs Person, Employee/Student/Guardian, and their contract declarations to scan).
 
-**Deliverables:** `tests/Architecture/IdentityContractDeclarationTest.php`; `DuplicateFlag` model + resolution workflow; Identity Governance permission group + seeded permissions.
+**Deliverables (actual):** `tests/Architecture/IdentityMaintenanceSchemaDeclarationTest.php` (named differently than originally planned — `IdentityContractDeclarationTest.php` was Sprint 2.4's own file, this sprint's replaces it under a name reflecting what it actually does); `App\Core\Contracts\OwnedByAggregate` (not originally planned — added when the scanner surfaced that Person's owned children (`Contact`/`Address`/`PersonIdentityDocument`) need a way to declare "my aggregate root handles this" without duplicating its logic); `DuplicateFlag` model + `DuplicateResolutionService`; Identity Governance permission group + seeded permissions (`identity.review-duplicates` enforced and granted to `registrar`; `identity.approve-merge`/`identity.approve-anonymization` seeded as vocabulary only).
 
-**Definition of Done:** the architecture test genuinely fails when a deliberately-added column is left undeclared, proving the safety net works before it's ever relied on for real.
+**Definition of Done:** the architecture test genuinely fails when a deliberately-added column is left undeclared, proving the safety net works before it's ever relied on for real. **Met, twice over** — proven for the base contract-presence check (temporarily stripped `User`'s declaration) and for the `OwnedByAggregate` ownership-claim check (temporarily pointed `Contact::owningAggregate()` at a non-compliant class).
 
 **Testing checklist:** the contract-declaration architecture test's own negative case (prove it catches an undeclared reference) is the critical test here.
+
+**Two gotchas found and documented, not just fixed silently:** `$user->can(...)` silently fails in this app (default guard `web`, permissions seeded under `sanctum` — use `hasPermissionTo($permission, 'sanctum')`); a global test-helper name collision (`withTeam()`, independently declared in two files) is now a shared helper in `tests/Pest.php`.
 
 **Git Milestone:** `v0.9-identity-maintenance-detection`
 

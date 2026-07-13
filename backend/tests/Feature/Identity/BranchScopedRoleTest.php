@@ -4,12 +4,6 @@ use App\Modules\Identity\Models\Branch;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Gate;
-use Spatie\Permission\PermissionRegistrar;
-
-function withTeam(?int $branchId): void
-{
-    app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
-}
 
 it('grants a role in one branch without granting it in another', function () {
     $branchA = Branch::factory()->create();

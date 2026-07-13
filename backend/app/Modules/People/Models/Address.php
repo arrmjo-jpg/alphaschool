@@ -2,6 +2,7 @@
 
 namespace App\Modules\People\Models;
 
+use App\Core\Contracts\OwnedByAggregate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,8 +11,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * A Person's address (docs/DOMAIN_BLUEPRINT.md §5) -- a child entity,
  * never columns on Person, since a person can have multiple address
  * types (home/pickup/billing).
+ *
+ * OwnedByAggregate, not ReassignsIdentityReferences/RedactsPersonalData
+ * directly: Person::reassignPerson() already cascades to this table
+ * (Sprint 2.1) -- Identity Maintenance calls Person, the aggregate
+ * root, never this child entity independently.
  */
-class Address extends Model
+class Address extends Model implements OwnedByAggregate
 {
     use SoftDeletes;
 
@@ -34,5 +40,10 @@ class Address extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public static function owningAggregate(): string
+    {
+        return Person::class;
     }
 }

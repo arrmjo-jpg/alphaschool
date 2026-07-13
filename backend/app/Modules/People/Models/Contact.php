@@ -2,6 +2,7 @@
 
 namespace App\Modules\People\Models;
 
+use App\Core\Contracts\OwnedByAggregate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,8 +13,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * and contact-change audit needs to be separately filterable from
  * identity-change audit (a phone-number change is a common OTP-hijack
  * precursor).
+ *
+ * OwnedByAggregate, not ReassignsIdentityReferences/RedactsPersonalData
+ * directly: Person::reassignPerson() already cascades to this table
+ * (Sprint 2.1) -- Identity Maintenance calls Person, the aggregate
+ * root, never this child entity independently.
  */
-class Contact extends Model
+class Contact extends Model implements OwnedByAggregate
 {
     use SoftDeletes;
 
@@ -39,5 +45,10 @@ class Contact extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public static function owningAggregate(): string
+    {
+        return Person::class;
     }
 }
