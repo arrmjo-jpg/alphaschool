@@ -349,6 +349,26 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 ---
 
+## Frontend Track F1 — Admin Platform Foundation
+
+**Status: Architecture frozen as `docs/adr/0015-admin-platform-foundation-frontend-architecture.md` (2026-07-13). Implementation in progress.** Not a numbered backend Phase — a parallel frontend track, run alongside Sprint 3.3 onward, blocked only by the small Identity-owned backend prerequisite slice below, and blocking nothing in the backend sequence.
+
+**Goal:** build the reusable Workspace shell `docs/ADMIN_PLATFORM.md` already specified — navigation, routing, layout, and the dashboard/widget/DataTable/form/modal frameworks — with zero business content, so every future workspace (Identity, Students, Admissions, Academic, HR, Finance, …) becomes installable as a single `WorkspaceDefinition` registration with no platform-layer changes.
+
+**Scope — IN:** `admin/` scaffolded on the frozen stack (React 18, Vite, TypeScript strict, Tailwind, shadcn/ui, TanStack Router/Query/Table, React Hook Form + Zod, Zustand, i18next); `AppShell` + permission-aware navigation + routing + responsive layout; Dashboard/Widget/DataTable/Form/Modal frameworks; Search, Command Palette, and Notification Center **frontend contracts and UI only**, backed by mock providers; theme system (light/dark + per-organization brand slot); an automated test proving the `WorkspaceDefinition` extension point requires no `AppShell`/nav/routing/layout changes; backend prerequisites — `GET /api/v1/me`, `GET /api/v1/workspaces` (returns `[]` today), `config/cors.php` — all inside Identity, no new backend module.
+
+**Scope — OUT:** every business workspace and screen (Identity, Roles, Branches, or any Domain module UI); the real Notification Engine, Scout-based Search backend, Reporting, and Broadcasting (ADR-0015 Decision 6 — frontend contracts only, real backends are independently future-scoped); a branch/team switcher concept (ADR-0015's Alternatives Considered — `/me` returns the union of permissions across all branch-scoped roles instead).
+
+**Dependencies:** none from the backend Phase sequence beyond Identity's own already-frozen Permission Groups (Sprint 2.3) that `/api/v1/me` and `/api/v1/workspaces` read.
+
+**Deliverables:** see `docs/adr/0015-admin-platform-foundation-frontend-architecture.md` for the full architecture; `docs/developer/admin-platform-frontend.md` (written at milestone close, mirroring the backend's contract-governance docs).
+
+**Definition of Done:** the shell renders correctly with zero registered workspaces (the primary acceptance criterion, not an edge case); a synthetic test-only workspace proves the registration contract with no platform source changes; every one of the sixteen subsystems named in the approved execution plan has a working, reviewable example; no workspace/business code exists anywhere in the diff.
+
+**Git Milestone:** `v1.0-admin-platform-foundation`
+
+---
+
 ## Phase 4 — Admissions + Enrollment
 
 #### Sprint 4.1 — Academic Year & Grade Level catalog
