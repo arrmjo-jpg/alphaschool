@@ -371,7 +371,7 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 ## Foundation Track: Administration Platform
 
-**Status: Architecture frozen 2026-07-14** (`docs/adr/0016` through `0022`, `docs/ADMINISTRATION_PLATFORM.md`, `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`). Implementation not yet started. Not a numbered backend Phase and not gated by one — a parallel Foundation-tier track, the same relationship Frontend Track F1 has to the Phase sequence above.
+**Status: Architecture frozen 2026-07-14** (`docs/adr/0016` through `0022`, `docs/ADMINISTRATION_PLATFORM.md`, `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`, including a same-day append-only amendment pack closing five findings from a dedicated pre-implementation critical review). **Phase 0 (Formalization) COMPLETE** — see `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`'s own Phase 0 entry; `app/Modules/Administration` exists with a proven boundary architecture test. Phase 1 (Configuration Platform Core) is the next milestone. Not a numbered backend Phase and not gated by one — a parallel Foundation-tier track, the same relationship Frontend Track F1 has to the Phase sequence above.
 
 **Goal:** replace the Blueprint §1/Addendum E1 "Settings resolution" charter's deferred internal design with a full Administration Domain Model — ten durable capabilities, a Configuration Platform, an Integration Platform, an Effective-Dated Business Policy pattern, and a derived Administration Experience Layer — engineered to remain correct for fifteen-plus years without Administration Platform ever becoming a God Module.
 

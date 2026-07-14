@@ -12,7 +12,19 @@ deptrac:
     - name: Foundation
       collectors:
         - type: classNameRegex
-          value: '#^App\\Modules\\(Identity|IdentityMaintenance|People|Media|Notifications|Settings)\\.*#'
+          value: '#^App\\Modules\\(Identity|IdentityMaintenance|People|Media|Notifications)\\.*#'
+
+    # docs/adr/0016-administration-platform-data-boundary-and-philosophy.md
+    # §5: Administration Platform's boundary is stricter than an ordinary
+    # Foundation module -- it must not depend on ANY other module, not even
+    # a sibling Foundation module, except Core. Given its own deptrac layer
+    # (rather than folded into Foundation's regex) specifically so its
+    # ruleset entry below can be narrower than Foundation's. Also checked by
+    # tests/Architecture/AdministrationPlatformBoundaryTest.php.
+    - name: Administration
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Modules\\Administration\\.*#'
 
     - name: Domain
       collectors:
@@ -31,6 +43,16 @@ deptrac:
     Foundation:
       - Core
       - Foundation
+
+    # Administration Platform depends only on Core (the Approval and Audit
+    # engines it wires into, per ADR-0018 Decision 5) -- deliberately absent
+    # from its own Foundation-to-Foundation allowance, since it must never
+    # acquire a direct dependency on People/Media/Notifications/Identity's
+    # models. Cross-module composition happens only through the two declared
+    # registration contracts (DeclaresSettingsSchema, DeclaresProviderSlots),
+    # which live in Core, not through raw module-to-module access.
+    Administration:
+      - Core
 
     # Domain modules may use Core and Foundation, but never a sibling Domain
     # module directly — cross-module interaction goes through events or that

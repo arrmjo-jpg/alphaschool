@@ -44,6 +44,8 @@ NOT SCHEDULED: Asset & Facility Stewardship / Infrastructure Administration
 
 ## Phase 0 — Formalization
 
+**Status: COMPLETE (2026-07-14).** `app/Modules/Settings` (the Sprint 0.1 placeholder) renamed to `app/Modules/Administration`; `deptrac.yaml` gained its own `Administration: [Core]` ruleset entry, deliberately narrower than the generic Foundation entry; `tests/Architecture/AdministrationPlatformBoundaryTest.php` written and proven — both a deliberate cross-module dependency and a deliberate forbidden table-name were introduced, confirmed caught, then removed, restoring a clean baseline. One real bug was found and fixed during that proof: the model-scanning helper's path comparison silently failed to match on Windows (`glob()`'s unresolved `../..` segments never equaled `realpath()`'s fully-resolved, backslash-normalized path), meaning the table-shape check would have passed vacuously instead of catching a real violation — caught only because the negative case was actually run, not assumed. 286 backend tests passing, Pint clean, Deptrac 0 violations.
+
 **Objective:** convert the frozen architecture into binding, reviewable artifacts and a proven CI gate before a single real migration exists.
 
 **Scope — IN:** ADR-0016 through ADR-0022 (complete — see `docs/adr/`); the Administration-Platform-boundary architecture test, written and proven red-then-green against a deliberately-violating dummy migration, the same negative-test discipline already proven for Identity Maintenance's schema scanner (Sprint 3.1).
