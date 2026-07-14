@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Administration\Support\ApprovalRoutingResolver as AdministrationApprovalRoutingResolver;
+use App\Modules\Administration\Support\SingleRoleApprovalRoutingResolver as AdministrationSingleRoleApprovalRoutingResolver;
 use App\Modules\Identity\Models\User;
 use App\Modules\IdentityMaintenance\Models\MergeRequest;
 use App\Modules\IdentityMaintenance\Policies\MergeRequestPolicy;
@@ -27,6 +29,14 @@ class AppServiceProvider extends ServiceProvider
         // one-line change, never a MergeOrchestrationService edit.
         $this->app->bind(ApprovalRoutingResolver::class, SingleRoleApprovalRoutingResolver::class);
         $this->app->bind(MergeFieldResolver::class, WinningPersonAlwaysWinsFieldResolver::class);
+
+        // Administration Platform's own, independently-declared copy of
+        // the same pattern (Phase 1) -- not shared with
+        // IdentityMaintenance's binding above, per Blueprint B1's
+        // promotion-not-prediction rule (two consumers do not yet
+        // justify promoting this to Core) and Administration's own
+        // deptrac boundary (Administration: [Core] only).
+        $this->app->bind(AdministrationApprovalRoutingResolver::class, AdministrationSingleRoleApprovalRoutingResolver::class);
     }
 
     /**

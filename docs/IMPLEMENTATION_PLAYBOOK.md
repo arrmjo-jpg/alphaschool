@@ -371,7 +371,7 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 ## Foundation Track: Administration Platform
 
-**Status: Architecture frozen 2026-07-14** (`docs/adr/0016` through `0022`, `docs/ADMINISTRATION_PLATFORM.md`, `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`, including a same-day append-only amendment pack closing five findings from a dedicated pre-implementation critical review). **Phase 0 (Formalization) COMPLETE** — see `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`'s own Phase 0 entry; `app/Modules/Administration` exists with a proven boundary architecture test. Phase 1 (Configuration Platform Core) is the next milestone. Not a numbered backend Phase and not gated by one — a parallel Foundation-tier track, the same relationship Frontend Track F1 has to the Phase sequence above.
+**Status: Architecture frozen 2026-07-14** (`docs/adr/0016` through `0022`, `docs/ADMINISTRATION_PLATFORM.md`, `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`, including a same-day append-only amendment pack closing five findings from a dedicated pre-implementation critical review). **Phase 0 (Formalization) COMPLETE** — see `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`'s own Phase 0 entry; `app/Modules/Administration` exists with a proven boundary architecture test. **Phase 1 (Configuration Platform Core + Developer Enablement) COMPLETE** — see the Playbook's own Phase 1 entry; the Configuration Registry, `SettingsResolver`, and the full Developer Enablement deliverable set are live, with Identity's OTP settings as the proof consumer. Phase 2 (Provider Registry & Credential Vault) is the next milestone, not yet started — per ADR-0022 §1, its backend must not be built in parallel with Phase 1. Not a numbered backend Phase and not gated by one — a parallel Foundation-tier track, the same relationship Frontend Track F1 has to the Phase sequence above.
 
 **Goal:** replace the Blueprint §1/Addendum E1 "Settings resolution" charter's deferred internal design with a full Administration Domain Model — ten durable capabilities, a Configuration Platform, an Integration Platform, an Effective-Dated Business Policy pattern, and a derived Administration Experience Layer — engineered to remain correct for fifteen-plus years without Administration Platform ever becoming a God Module.
 
@@ -387,7 +387,7 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 **Definition of Done (Phase 1, first real implementation milestone):** see `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`'s Phase 1 — Identity's OTP settings live through the Configuration Platform, Developer Enablement deliverables (SDK, helpers, docs, worked example) complete, zero UI.
 
-**Git Milestone:** none yet — architecture-freeze commit only, matching the precedent set by ADR-0015's own freeze commit; a Git tag is created only once Phase 1 of the Playbook actually ships.
+**Git Milestone:** Phase 0 and Phase 1 both committed locally (no push); a Git tag is deferred until Phase 2 (the next hard sequencing boundary, ADR-0022 §1) is also complete.
 
 ---
 

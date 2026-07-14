@@ -2,6 +2,8 @@
 
 namespace App\Modules\Identity\Services;
 
+use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Modules\Administration\Services\SettingsResolver;
 use App\Modules\Identity\Contracts\StepUpAuthentication;
 use App\Modules\Identity\Models\User;
 use App\Modules\People\Models\Contact;
@@ -16,12 +18,19 @@ use InvalidArgumentException;
  * module this depends on doesn't exist yet (later this phase). Replace
  * the "not sent" gap once it does; the mechanism itself does not need
  * to change.
+ *
+ * Code length and challenge lifetime are resolved through the
+ * Configuration Platform (Administration Platform Phase 1's proof
+ * consumer, see App\Modules\Identity\Support\IdentityOtpSettings) --
+ * the values below are the two keys' own declared defaults, so this
+ * retrofit changes zero observable behavior from the prior hardcoded
+ * constants; only the source of truth moved.
  */
 class StepUpAuthenticationService implements StepUpAuthentication
 {
     private const CACHE_PREFIX = 'step_up_challenge:';
 
-    private const TTL_MINUTES = 5;
+    public function __construct(private readonly SettingsResolver $settings) {}
 
     public function challenge(User $user, Contact $contact): string
     {
@@ -33,13 +42,16 @@ class StepUpAuthenticationService implements StepUpAuthentication
             throw new InvalidArgumentException('Step-up authentication requires an already-verified contact.');
         }
 
+        $codeLength = (int) $this->settings->resolve('identity.otp.code_length', ConfigurationScopeContext::global())->value;
+        $lifetimeMinutes = (int) $this->settings->resolve('identity.otp.lifetime_minutes', ConfigurationScopeContext::global())->value;
+
         $challengeId = (string) Str::uuid();
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $code = str_pad((string) random_int(0, (10 ** $codeLength) - 1), $codeLength, '0', STR_PAD_LEFT);
 
         Cache::put(self::CACHE_PREFIX.$challengeId, [
             'user_id' => $user->id,
             'code' => $code,
-        ], now()->addMinutes(self::TTL_MINUTES));
+        ], now()->addMinutes($lifetimeMinutes));
 
         return $challengeId;
     }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Contracts\DeclaresSettingsSchema;
+use App\Modules\Administration\Services\ConfigurationRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -59,6 +61,22 @@ function something()
 function withTeam(?int $branchId): void
 {
     app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
+}
+
+/**
+ * Administration Platform Phase 1's Testing Helper (Developer
+ * Enablement, docs/developer/configuration-platform.md) -- registers
+ * one or more DeclaresSettingsSchema implementers and syncs them, the
+ * one-line setup every future module's own Configuration Platform test
+ * needs, instead of each test file re-deriving the
+ * config()+ConfigurationRegistry::sync() boilerplate independently.
+ *
+ * @param  class-string<DeclaresSettingsSchema>[]  $schemaClasses
+ */
+function registerConfigurationSchemas(array $schemaClasses): void
+{
+    config(['administration.registered_settings_schemas' => $schemaClasses]);
+    app(ConfigurationRegistry::class)->sync();
 }
 
 /**

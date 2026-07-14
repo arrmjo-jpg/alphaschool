@@ -39,10 +39,16 @@ deptrac:
 
     # Foundation modules may use Core, and may depend on each other where a
     # real relationship exists (e.g. People -> Media for photo collections),
-    # but must never depend on a Domain module.
+    # but must never depend on a Domain module. Administration is a
+    # permitted dependency (added in Phase 1, not Phase 0's original entry)
+    # because consuming the Configuration Platform's SettingsResolver is the
+    # entire point of the mechanism -- Identity's OTP retrofit is the first
+    # real instance. The direction is one-way: Administration's own ruleset
+    # below does not list Foundation back.
     Foundation:
       - Core
       - Foundation
+      - Administration
 
     # Administration Platform depends only on Core (the Approval and Audit
     # engines it wires into, per ADR-0018 Decision 5) -- deliberately absent
@@ -50,7 +56,10 @@ deptrac:
     # acquire a direct dependency on People/Media/Notifications/Identity's
     # models. Cross-module composition happens only through the two declared
     # registration contracts (DeclaresSettingsSchema, DeclaresProviderSlots),
-    # which live in Core, not through raw module-to-module access.
+    # which live in Core, not through raw module-to-module access. Other
+    # modules depending ON Administration (Foundation and Domain's own
+    # ruleset entries) is the correct, intended direction -- only the
+    # reverse is forbidden.
     Administration:
       - Core
 
@@ -58,7 +67,11 @@ deptrac:
     # module directly — cross-module interaction goes through events or that
     # module's public service contract instead (Blueprint §2). This omission
     # is the actual enforcement: Domain is deliberately absent from its own
-    # ruleset entry.
+    # ruleset entry. Administration is a permitted dependency for the same
+    # reason as Foundation's entry above -- Domain modules (Finance's fee
+    # policies, Academic's grading configuration) will eventually consume
+    # the Configuration Platform too.
     Domain:
       - Core
       - Foundation
+      - Administration

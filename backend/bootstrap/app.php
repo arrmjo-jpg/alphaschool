@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Administration\Console\Commands\SyncConfigurationSchemas;
 use App\Modules\Media\Console\Commands\PurgeTemporaryMedia;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     // does not find them -- registered explicitly here instead.
     ->withCommands([
         PurgeTemporaryMedia::class,
+        SyncConfigurationSchemas::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         //

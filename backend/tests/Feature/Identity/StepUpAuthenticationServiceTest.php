@@ -2,6 +2,7 @@
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\StepUpAuthenticationService;
+use App\Modules\Identity\Support\IdentityOtpSettings;
 use App\Modules\People\Models\Contact;
 
 function verifiedContactFor(User $user): Contact
@@ -14,8 +15,13 @@ function verifiedContactFor(User $user): Contact
     ]);
 }
 
+// Administration Platform Phase 1 retrofit: code length/lifetime now
+// resolve() through the Configuration Platform, which needs
+// identity.otp.* registered before any test can call challenge().
+beforeEach(fn () => registerConfigurationSchemas([IdentityOtpSettings::class]));
+
 it('issues a challenge and verifies the correct code', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $contact = verifiedContactFor($user);
 
@@ -30,7 +36,7 @@ it('issues a challenge and verifies the correct code', function () {
 });
 
 it('rejects an incorrect code without consuming the challenge', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $contact = verifiedContactFor($user);
 
@@ -40,7 +46,7 @@ it('rejects an incorrect code without consuming the challenge', function () {
 });
 
 it('rejects an unknown or already-consumed challenge', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $contact = verifiedContactFor($user);
 
@@ -52,7 +58,7 @@ it('rejects an unknown or already-consumed challenge', function () {
 });
 
 it('refuses to issue a challenge against an unverified contact', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $unverifiedContact = Contact::create([
         'person_id' => $user->person_id,
@@ -64,7 +70,7 @@ it('refuses to issue a challenge against an unverified contact', function () {
 })->throws(InvalidArgumentException::class);
 
 it('refuses to issue a challenge against a contact belonging to a different user', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
     $contact = verifiedContactFor($otherUser);
@@ -73,7 +79,7 @@ it('refuses to issue a challenge against a contact belonging to a different user
 })->throws(InvalidArgumentException::class);
 
 it('never lets one user verify with another user\'s challenge', function () {
-    $service = new StepUpAuthenticationService;
+    $service = app(StepUpAuthenticationService::class);
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
     $contact = verifiedContactFor($user);

@@ -72,6 +72,13 @@ class PermissionSeeder extends Seeder
             'roles.view' => ['group' => 'identity', 'name' => ['en' => 'View Roles', 'ar' => 'عرض الأدوار']],
             'roles.create' => ['group' => 'identity', 'name' => ['en' => 'Create Roles', 'ar' => 'إنشاء الأدوار']],
             'roles.update' => ['group' => 'identity', 'name' => ['en' => 'Update Roles', 'ar' => 'تعديل الأدوار']],
+            // Administration Platform Phase 1 -- the Configuration
+            // Platform's own metadata model (ADR-0018 Decision 9) makes
+            // both view and edit permissions mandatory per declared key;
+            // this is that pair for Identity's OTP settings, the Phase 1
+            // proof consumer. See app/Modules/Identity/Support/IdentityOtpSettings.php.
+            'identity.view-otp-settings' => ['group' => 'identity', 'name' => ['en' => 'View OTP Settings', 'ar' => 'عرض إعدادات رمز التحقق']],
+            'identity.configure-otp-settings' => ['group' => 'identity', 'name' => ['en' => 'Configure OTP Settings', 'ar' => 'ضبط إعدادات رمز التحقق']],
             'people.view' => ['group' => 'people', 'name' => ['en' => 'View People', 'ar' => 'عرض الأشخاص']],
             'people.create' => ['group' => 'people', 'name' => ['en' => 'Create People', 'ar' => 'إنشاء الأشخاص']],
             'people.update' => ['group' => 'people', 'name' => ['en' => 'Update People', 'ar' => 'تعديل الأشخاص']],
