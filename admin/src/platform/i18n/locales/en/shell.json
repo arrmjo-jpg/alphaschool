@@ -1,0 +1,19 @@
+{
+  "shell.emptyWorkspaces.title": "No workspaces available",
+  "shell.emptyWorkspaces.body": "Your account isn't licensed or permitted for any workspace yet. Contact your administrator if you believe this is a mistake.",
+  "shell.nav.collapse": "Collapse sidebar",
+  "shell.nav.expand": "Expand sidebar",
+  "shell.topbar.search": "Search…",
+  "shell.topbar.notifications": "Notifications",
+  "shell.topbar.commandPalette": "Command palette",
+  "shell.topbar.theme": "Toggle theme",
+  "shell.topbar.logout": "Log out",
+  "shell.login.title": "Sign in",
+  "shell.login.username": "Username or email",
+  "shell.login.password": "Password",
+  "shell.login.submit": "Sign in",
+  "shell.login.error": "These credentials do not match our records.",
+  "shell.notifications.empty": "You're all caught up.",
+  "shell.commandPalette.placeholder": "Type a command or search…",
+  "shell.commandPalette.noResults": "No results found."
+}
