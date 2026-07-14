@@ -369,6 +369,28 @@ Phases 0–4 are strictly sequential — each is a hard dependency of the next, 
 
 ---
 
+## Foundation Track: Administration Platform
+
+**Status: Architecture frozen 2026-07-14** (`docs/adr/0016` through `0022`, `docs/ADMINISTRATION_PLATFORM.md`, `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`). Implementation not yet started. Not a numbered backend Phase and not gated by one — a parallel Foundation-tier track, the same relationship Frontend Track F1 has to the Phase sequence above.
+
+**Goal:** replace the Blueprint §1/Addendum E1 "Settings resolution" charter's deferred internal design with a full Administration Domain Model — ten durable capabilities, a Configuration Platform, an Integration Platform, an Effective-Dated Business Policy pattern, and a derived Administration Experience Layer — engineered to remain correct for fifteen-plus years without Administration Platform ever becoming a God Module.
+
+**Scope — IN (architecture, complete):** the five-question / ten-capability / four-axis model; the Configuration Platform's registration contract, resolver, and fifteen-field metadata model; the Integration Platform's four mechanisms (Provider Registry, Webhook Gateway, Sync/ETL, outbound API Platform); the Effective-Dated Business Policy pattern; the Administration Experience Layer (Search, Dependency Graph, Health/Score, Readiness, Diff, Packages/Snapshots, Import/Export, Rollback, Environment Promotion); the Registry Pattern and Content Lifecycle Pattern, added to the Blueprint's shared-pattern catalog; seven binding delivery principles (ADR-0022) governing implementation sequencing.
+
+**Scope — OUT (deferred to their own sessions, never decided speculatively here):** the White-Label / multi-tenancy commercial-model decision — deliberately treated as a *consumer* of this architecture (via the Altitude axis), not a prerequisite to it; Asset & Facility Stewardship / Infrastructure Administration, needing its own dedicated design session before any phase can be scoped; Website's Digital Experience surface, needing the same.
+
+**Dependencies:** none from the backend Phase sequence — consumes Identity's already-frozen Permission Groups and Core's already-frozen Approval/Audit engines, exactly as Frontend Track F1 does.
+
+**Deliverables:** `docs/ADMINISTRATION_PLATFORM.md` (the Blueprint), `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md` (Phase 0–7 execution schedule, dependency graph, risk ranking), `docs/adr/0016` through `0022`.
+
+**Definition of Done (architecture):** every ADR in the series Accepted; the Playbook's Phase 0 boundary architecture test specified and ready to be written as the first real implementation act.
+
+**Definition of Done (Phase 1, first real implementation milestone):** see `docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md`'s Phase 1 — Identity's OTP settings live through the Configuration Platform, Developer Enablement deliverables (SDK, helpers, docs, worked example) complete, zero UI.
+
+**Git Milestone:** none yet — architecture-freeze commit only, matching the precedent set by ADR-0015's own freeze commit; a Git tag is created only once Phase 1 of the Playbook actually ships.
+
+---
+
 ## Phase 4 — Admissions + Enrollment
 
 #### Sprint 4.1 — Academic Year & Grade Level catalog
