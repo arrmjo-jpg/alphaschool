@@ -1,6 +1,10 @@
 <?php
 
+use App\Modules\Identity\Providers\GoogleOAuthProvider;
 use App\Modules\Identity\Support\IdentityOtpSettings;
+use App\Modules\Media\Providers\R2StorageProvider;
+use App\Modules\Notifications\Providers\FirebasePushProvider;
+use App\Modules\Notifications\Providers\SmtpEmailProvider;
 
 return [
 
@@ -22,6 +26,27 @@ return [
 
     'registered_settings_schemas' => [
         IdentityOtpSettings::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Registered Provider Slots
+    |--------------------------------------------------------------------------
+    |
+    | Every App\Core\Contracts\DeclaresProviderSlots implementer, listed
+    | explicitly for the identical reason as registered_settings_schemas
+    | above (docs/adr/0019-integration-platform-architecture.md Decision
+    | 1: "adding a new vendor... requires zero changes to the Registry
+    | itself"). Adding a new Provider means adding one line here and
+    | running `php artisan administration:sync-providers`.
+    |
+    */
+
+    'registered_provider_slots' => [
+        R2StorageProvider::class,
+        SmtpEmailProvider::class,
+        GoogleOAuthProvider::class,
+        FirebasePushProvider::class,
     ],
 
 ];

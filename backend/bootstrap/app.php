@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Administration\Console\Commands\SyncConfigurationSchemas;
+use App\Modules\Administration\Console\Commands\SyncProviderSlots;
 use App\Modules\Media\Console\Commands\PurgeTemporaryMedia;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         PurgeTemporaryMedia::class,
         SyncConfigurationSchemas::class,
+        SyncProviderSlots::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         //

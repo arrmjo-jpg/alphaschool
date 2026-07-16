@@ -83,16 +83,20 @@ return [
         |
         */
 
+        // Phase 2 retrofit (docs/ADMINISTRATION_PLATFORM_PLAYBOOK.md):
+        // key/secret/region/endpoint are no longer read from env() here
+        // -- App\Providers\AppServiceProvider::boot() injects them from
+        // App\Modules\Media\Providers\R2StorageProvider (backed by the
+        // Credential Vault) at request time, for any tier whose driver
+        // is 's3'. 'bucket' stays env-sourced deliberately: it is a
+        // per-tier identifier, not a secret, and was never a
+        // credential_fields entry on that Provider's slot.
         'public' => [
             'driver' => env('MEDIA_PUBLIC_DRIVER', 'local'),
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
-            'key' => env('R2_ACCESS_KEY_ID'),
-            'secret' => env('R2_SECRET_ACCESS_KEY'),
-            'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_PUBLIC_BUCKET'),
-            'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => true,
             'throw' => false,
             'report' => false,
@@ -107,11 +111,7 @@ return [
             'driver' => env('MEDIA_PRIVATE_DRIVER', 'local'),
             'root' => storage_path('app/private-media'),
             'visibility' => 'private',
-            'key' => env('R2_ACCESS_KEY_ID'),
-            'secret' => env('R2_SECRET_ACCESS_KEY'),
-            'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_PRIVATE_BUCKET'),
-            'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => true,
             'throw' => false,
             'report' => false,
@@ -125,11 +125,7 @@ return [
             'driver' => env('MEDIA_TEMPORARY_DRIVER', 'local'),
             'root' => storage_path('app/temporary-media'),
             'visibility' => 'private',
-            'key' => env('R2_ACCESS_KEY_ID'),
-            'secret' => env('R2_SECRET_ACCESS_KEY'),
-            'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_TEMPORARY_BUCKET'),
-            'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => true,
             'throw' => false,
             'report' => false,

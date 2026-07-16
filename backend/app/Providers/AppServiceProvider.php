@@ -13,7 +13,9 @@ use App\Modules\IdentityMaintenance\Support\SingleRoleApprovalRoutingResolver;
 use App\Modules\IdentityMaintenance\Support\WinningPersonAlwaysWinsFieldResolver;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Policies\MediaPolicy;
+use App\Modules\Media\Providers\R2StorageProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -61,5 +63,47 @@ class AppServiceProvider extends ServiceProvider
         // any other resource) that didn't exist when this line was
         // written.
         Gate::before(fn (User $user) => $user->is_super_admin ? true : null);
+
+        $this->configureMediaStorageCredentials();
+    }
+
+    /**
+     * Playbook Phase 2's Media retrofit: config/filesystems.php no
+     * longer sources R2's key/secret/region/endpoint from env() -- they
+     * are injected here from App\Modules\Media\Providers\
+     * R2StorageProvider (Vault-backed) instead, resolved live on every
+     * request that has an s3-driven tier, deliberately never cached
+     * here, consistent with SettingsResolver's own "resolve live, cache
+     * only once profiling proves it necessary" stance (ADR-0018 Decision
+     * 3). Guarded by Schema::hasTable() so a fresh install's first
+     * `migrate` run (before provider_credentials exists) and the
+     * default 'local' driver (dev/test, which ignores these keys
+     * entirely) never attempt a query.
+     */
+    private function configureMediaStorageCredentials(): void
+    {
+        $anyS3Tier = collect(['public', 'private', 'temporary'])
+            ->contains(fn ($disk) => config("filesystems.disks.{$disk}.driver") === 's3');
+
+        if (! $anyS3Tier || ! Schema::hasTable('provider_credentials')) {
+            return;
+        }
+
+        foreach (['public', 'private', 'temporary'] as $disk) {
+            if (config("filesystems.disks.{$disk}.driver") !== 's3') {
+                continue;
+            }
+
+            $credentials = $this->app->make(R2StorageProvider::class)->resolveCredentials();
+
+            if ($credentials !== null) {
+                config([
+                    "filesystems.disks.{$disk}.key" => $credentials['key'],
+                    "filesystems.disks.{$disk}.secret" => $credentials['secret'],
+                    "filesystems.disks.{$disk}.region" => $credentials['region'],
+                    "filesystems.disks.{$disk}.endpoint" => $credentials['endpoint'],
+                ]);
+            }
+        }
     }
 }

@@ -40,6 +40,13 @@ class PermissionSeeder extends Seeder
             // Duplicate Resolution review sit behind their own dedicated
             // group, never folded into ordinary Identity & Access grants.
             'identity-governance' => ['sort_order' => 3, 'icon' => 'shield-check', 'name' => ['en' => 'Identity Governance', 'ar' => 'حوكمة الهوية']],
+            // Administration Platform Phase 2 -- Provider credential
+            // management permissions live under each owning module's own
+            // group (Playbook Phase 2: "a distinct, narrower permission
+            // gates them versus generic Configuration access"), not a
+            // single catch-all Administration group.
+            'media' => ['sort_order' => 4, 'icon' => 'image', 'name' => ['en' => 'Media', 'ar' => 'الوسائط']],
+            'notifications' => ['sort_order' => 5, 'icon' => 'bell', 'name' => ['en' => 'Notifications', 'ar' => 'الإشعارات']],
         ];
 
         $groups = [];
@@ -98,6 +105,15 @@ class PermissionSeeder extends Seeder
             'identity.request-merge' => ['group' => 'identity-governance', 'name' => ['en' => 'Request Person Merge', 'ar' => 'طلب دمج الأشخاص']],
             'identity.approve-merge' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Merge', 'ar' => 'اعتماد دمج الأشخاص']],
             'identity.approve-anonymization' => ['group' => 'identity-governance', 'name' => ['en' => 'Approve Person Anonymization', 'ar' => 'اعتماد إخفاء هوية الشخص']],
+            // Administration Platform Phase 2 -- Provider Registry
+            // credential-edit permissions (docs/adr/0019-integration
+            // -platform-architecture.md), one per registered slot, not
+            // granted to any role by default, matching the
+            // identity.approve-anonymization precedent above.
+            'identity.manage-oauth-provider' => ['group' => 'identity', 'name' => ['en' => 'Manage OAuth Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود OAuth']],
+            'media.manage-storage-provider' => ['group' => 'media', 'name' => ['en' => 'Manage Storage Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود التخزين']],
+            'notifications.manage-email-provider' => ['group' => 'notifications', 'name' => ['en' => 'Manage Email Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود البريد الإلكتروني']],
+            'notifications.manage-push-provider' => ['group' => 'notifications', 'name' => ['en' => 'Manage Push Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود الإشعارات']],
         ];
 
         $permissions = [];
