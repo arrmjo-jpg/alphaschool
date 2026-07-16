@@ -45,7 +45,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <form
         onSubmit={handleSubmit((values) => mutation.mutate(values))}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm"
+        className="flex w-full max-w-sm flex-col gap-4 rounded-md border bg-card p-6 text-card-foreground shadow-sm"
       >
         <h1 className="text-lg font-semibold">{t('shell.login.title')}</h1>
         <TextField control={control} name="login" label={t('shell.login.username')} />

@@ -18,7 +18,7 @@ export function DataTable<T>({ table, isLoading, isError, page, lastPage, onPage
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-md border">
+      <div className="rounded-none border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

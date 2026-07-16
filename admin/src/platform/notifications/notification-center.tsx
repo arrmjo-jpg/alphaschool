@@ -1,6 +1,7 @@
 import { Bell } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/platform/components/ui/button'
+import { cn } from '@/lib/cn'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +42,7 @@ export function NotificationCenter() {
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-3 py-8 text-center">
-            <Bell className="size-8 text-muted-foreground/50" />
+            <Bell className={cn(ICON_SIZE.prominent, 'text-muted-foreground/50')} />
             <p className="text-sm font-medium">{t('shell.notifications.empty')}</p>
             <p className="text-xs text-muted-foreground">{t('shell.notifications.emptyHint')}</p>
           </div>
@@ -50,7 +51,7 @@ export function NotificationCenter() {
             <button
               key={notification.id}
               onClick={() => markAsRead.mutate(notification.id)}
-              className="flex w-full flex-col gap-0.5 rounded-xl p-2.5 text-start text-sm outline-none transition-colors hover:bg-accent focus-visible:bg-accent"
+              className="flex w-full flex-col gap-0.5 rounded-sm p-2.5 text-start text-sm outline-none transition-colors hover:bg-accent focus-visible:bg-accent"
             >
               <span className="flex items-center gap-2 font-medium">
                 {notification.readAt === null && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}

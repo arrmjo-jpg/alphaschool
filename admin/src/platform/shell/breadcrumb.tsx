@@ -4,6 +4,7 @@ import { ChevronRight, LayoutDashboard } from 'lucide-react'
 import { useVisibleWorkspaces } from '@/platform/navigation/use-visible-workspaces'
 import { useBreadcrumbStore } from '@/platform/shell/breadcrumb-store'
 import { cn } from '@/lib/cn'
+import { ICON_SIZE } from '@/lib/icon-sizes'
 
 /**
  * A genuine multi-level trail (docs/ADMIN_DESIGN_SYSTEM.md §11 --
@@ -38,14 +39,14 @@ export function Breadcrumb() {
         className="flex shrink-0 items-center gap-1.5 rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         aria-label={t('shell.breadcrumb.home', 'Dashboard')}
       >
-        <LayoutDashboard className="size-4" />
+        <LayoutDashboard className={ICON_SIZE.dense} />
       </Link>
 
-      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:rotate-180" />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" />
 
       {isWorkspaceRootCurrent ? (
         <span className="flex min-w-0 items-center gap-1.5 font-medium text-foreground">
-          <WorkspaceIcon className="size-4 shrink-0" />
+          <WorkspaceIcon className={cn(ICON_SIZE.dense, 'shrink-0')} />
           <span className="truncate">{t(workspace.labelKey, workspace.labelKey)}</span>
         </span>
       ) : (
@@ -54,7 +55,7 @@ export function Breadcrumb() {
           params={{ workspaceKey: workspace.key }}
           className="flex min-w-0 items-center gap-1.5 rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <WorkspaceIcon className="size-4 shrink-0" />
+          <WorkspaceIcon className={cn(ICON_SIZE.dense, 'shrink-0')} />
           <span className="truncate">{t(workspace.labelKey, workspace.labelKey)}</span>
         </Link>
       )}
@@ -63,7 +64,7 @@ export function Breadcrumb() {
         const isLast = index === extraSegments.length - 1
         return (
           <span key={`${segment.label}-${index}`} className="flex min-w-0 items-center gap-1.5">
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:rotate-180" />
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" />
             {segment.href && !isLast ? (
               <Link
                 to={segment.href}

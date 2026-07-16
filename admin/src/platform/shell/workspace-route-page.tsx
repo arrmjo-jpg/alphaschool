@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { getRegisteredWorkspaces } from '@/workspaces/registry'
+import { ICON_SIZE } from '@/lib/icon-sizes'
+import { cn } from '@/lib/cn'
 
 /**
  * The one generic route every registered workspace mounts under
@@ -18,7 +20,7 @@ export function WorkspaceRoutePage({ workspaceKey }: { workspaceKey: string }) {
   const LazyWorkspace = lazy(workspace.loadComponent)
 
   return (
-    <Suspense fallback={<Loader2 className="m-8 size-6 animate-spin text-muted-foreground" />}>
+    <Suspense fallback={<Loader2 className={cn('m-8 animate-spin text-muted-foreground', ICON_SIZE.prominent)} />}>
       <LazyWorkspace />
     </Suspense>
   )

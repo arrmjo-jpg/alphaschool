@@ -18,7 +18,7 @@ export const TooltipContent = React.forwardRef<
         // Inverted color scheme (dark bubble on light theme, design doc
         // §4.1/§10) -- bg-foreground/text-background, not bg-popover,
         // matching the legacy admin's own tooltip treatment exactly.
-        'z-50 overflow-hidden rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-soft animate-fade-in',
+        'z-50 overflow-hidden rounded-md bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-soft animate-fade-in',
         className,
       )}
       {...props}

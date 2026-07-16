@@ -3,6 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { ICON_SIZE } from '@/lib/icon-sizes'
 
 export const Sheet = DialogPrimitive.Root
 export const SheetTrigger = DialogPrimitive.Trigger
@@ -45,8 +46,8 @@ export const SheetContent = React.forwardRef<
     <SheetOverlay />
     <DialogPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
       {children}
-      <DialogPrimitive.Close className="absolute end-4 top-4 rounded-sm opacity-70 outline-none hover:opacity-100">
-        <X className="size-4" />
+      <DialogPrimitive.Close className="absolute end-4 top-4 rounded-sm p-1 opacity-70 outline-none hover:bg-accent hover:opacity-100">
+        <X className={ICON_SIZE.dense} />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

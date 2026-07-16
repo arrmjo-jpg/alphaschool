@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useVisibleWorkspaces } from '@/platform/navigation/use-visible-workspaces'
 import { EmptyWorkspaceState } from '@/platform/shell/empty-workspace-state'
+import { ICON_SIZE } from '@/lib/icon-sizes'
 
 /** The shell's landing page -- a workspace launcher, never business content itself. */
 export function HomePage() {
@@ -20,9 +21,9 @@ export function HomePage() {
             key={workspace.key}
             to="/w/$workspaceKey"
             params={{ workspaceKey: workspace.key }}
-            className="flex flex-col items-center gap-2 rounded-lg border bg-card p-6 text-card-foreground hover:bg-accent"
+            className="flex flex-col items-center gap-2 rounded-md border bg-card p-6 text-card-foreground hover:bg-accent"
           >
-            <Icon className="size-6" />
+            <Icon className={ICON_SIZE.prominent} />
             <span className="text-sm font-medium">{t(workspace.labelKey, workspace.labelKey)}</span>
           </Link>
         )

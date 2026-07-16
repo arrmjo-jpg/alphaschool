@@ -61,7 +61,7 @@ export function CommandPalette() {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-foreground/40 backdrop-blur-sm animate-fade-in" />
         <DialogPrimitive.Content
-          className="fixed start-1/2 top-24 z-[60] w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-soft-lg animate-fade-in rtl:translate-x-1/2"
+          className="fixed start-1/2 top-24 z-[60] w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-soft-lg animate-fade-in rtl:translate-x-1/2"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogPrimitive.Title className="sr-only">{t('shell.topbar.commandPalette')}</DialogPrimitive.Title>
@@ -98,7 +98,7 @@ export function CommandPalette() {
                         close()
                       }}
                       className={cn(
-                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground',
+                        'flex cursor-pointer items-center justify-between rounded-sm px-3 py-2 text-sm text-foreground',
                         'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
                       )}
                     >
@@ -123,7 +123,7 @@ export function CommandPalette() {
                         navigate({ to: result.path })
                         close()
                       }}
-                      className="cursor-pointer rounded-xl px-3 py-2 text-sm text-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+                      className="cursor-pointer rounded-sm px-3 py-2 text-sm text-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
                     >
                       <p className="truncate">{result.title}</p>
                       {result.subtitle && <p className="truncate text-xs text-muted-foreground">{result.subtitle}</p>}

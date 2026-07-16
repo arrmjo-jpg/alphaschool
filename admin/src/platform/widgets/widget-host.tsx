@@ -12,7 +12,7 @@ function WidgetBody<T>({ widget }: { widget: WidgetDefinition<T> }) {
   })
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 text-card-foreground">
+    <div className="flex flex-col gap-2 rounded-md border bg-card p-4 text-card-foreground">
       <h3 className="text-sm font-medium text-muted-foreground">{t(widget.titleKey, widget.titleKey)}</h3>
       {isLoading ? (
         <Loader2 className="size-5 animate-spin text-muted-foreground" />

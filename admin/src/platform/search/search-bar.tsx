@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Input } from '@/platform/components/ui/input'
 import { getSearchProviders, searchAllProviders } from '@/platform/search/search-provider'
 import { cn } from '@/lib/cn'
+import { ICON_SIZE } from '@/lib/icon-sizes'
 
 /**
  * A real capability, not a decorative box (docs/ADMIN_DESIGN_SYSTEM.md
@@ -82,7 +83,12 @@ export function SearchBar() {
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <SearchIcon
+        className={cn(
+          'pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground',
+          ICON_SIZE.dense,
+        )}
+      />
       <Input
         value={query}
         onChange={(event) => {
@@ -92,7 +98,7 @@ export function SearchBar() {
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={t('shell.topbar.search')}
-        className="ps-8"
+        className="ps-9"
         role="combobox"
         aria-expanded={showPanel}
         aria-controls="search-results"
@@ -101,7 +107,7 @@ export function SearchBar() {
         <div
           id="search-results"
           role="listbox"
-          className="absolute z-40 mt-1.5 w-full overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-soft-lg animate-fade-in"
+          className="absolute z-40 mt-1.5 w-full overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-soft-lg animate-fade-in"
         >
           {!hasProviders ? (
             <p className="p-4 text-sm text-muted-foreground">{t('shell.search.notConnected')}</p>
@@ -117,7 +123,7 @@ export function SearchBar() {
                     to={result.path}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'block rounded-xl px-3 py-2 text-sm transition-colors',
+                      'block rounded-sm px-3 py-2 text-sm transition-colors',
                       index === highlighted ? 'bg-accent text-accent-foreground' : 'hover:bg-accent',
                     )}
                   >

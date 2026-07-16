@@ -133,7 +133,7 @@ export function SideNav({ forceExpanded = false, onNavigate }: SideNavProps) {
         onClick={onNavigate}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+          'flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors',
           focusRing,
           collapsed && 'justify-center px-0',
           indent && !collapsed && 'ps-9',
@@ -198,14 +198,14 @@ export function SideNav({ forceExpanded = false, onNavigate }: SideNavProps) {
                 onClick={() => toggleGroup(node)}
                 aria-expanded={open}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-accent',
+                  'flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-accent',
                   focusRing,
                 )}
               >
                 <GroupIcon className={cn(ICON_SIZE.default, 'shrink-0')} />
                 <span className="flex-1 truncate text-start">{t(node.group.labelKey, node.group.labelKey)}</span>
                 <ChevronDown
-                  className={cn('size-4 shrink-0 transition-transform', open && 'rotate-180')}
+                  className={cn(ICON_SIZE.dense, 'shrink-0 transition-transform', open && 'rotate-180')}
                 />
               </button>
               {open && (
@@ -227,7 +227,7 @@ export function SideNav({ forceExpanded = false, onNavigate }: SideNavProps) {
             onClick={toggle}
             aria-label={t(collapsed ? 'shell.nav.expand' : 'shell.nav.collapse')}
             className={cn(
-              'flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+              'flex size-10 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
               focusRing,
               !collapsed && 'ms-auto',
             )}
