@@ -1,11 +1,23 @@
 @import "tailwindcss";
+@import "@fontsource/tajawal/400.css";
+@import "@fontsource/tajawal/500.css";
+@import "@fontsource/tajawal/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 
 /*
- * Admin Platform Foundation theme system (ADR-0015).
- * Design tokens as CSS variables, consumed via Tailwind's @theme
- * mapping below -- this is what makes the ThemeProvider's light/dark
- * toggle and the per-organization brand override slot possible without
- * touching component code.
+ * AlphaSchool ERP Administration Frontend Design System
+ * (docs/ADMIN_DESIGN_SYSTEM.md, FROZEN 2026-07-16). Phase A -- Design
+ * Tokens: color, typography, radius, elevation, motion. Every token
+ * below is either a direct port of a value the design doc's §4
+ * recorded from the legacy admin, or an explicit doc recommendation
+ * (the --success/--warning tokens, §4.1; the unified radius scale,
+ * §4.3). Self-hosted fonts (@fontsource) rather than the legacy
+ * admin's Google Fonts CDN @import -- an implementation-level choice
+ * (no runtime external dependency), not a visual-token change, so it
+ * does not reopen the frozen document.
  */
 @theme inline {
   --color-background: var(--background);
@@ -24,6 +36,15 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Success/Warning promoted to real semantic tokens (design doc §4.1
+     recommendation) -- the one place the legacy admin's own token
+     discipline fell short (ad hoc emerald-500/amber-500 Tailwind
+     palette classes scattered through component code instead of a
+     named token). */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -31,75 +52,121 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Bilingual pairing, design doc §4.2 -- Tajawal for Arabic/default,
+     Inter for the Latin/English reading path. Never overridden
+     per-component; html[lang] selects the family below. */
+  --font-sans: 'Tajawal', 'Inter', system-ui, sans-serif;
+  --font-latin: 'Inter', system-ui, sans-serif;
+  /* Elevation, design doc §4.3 -- ported verbatim from the legacy
+     admin's two custom shadow tokens (cool neutral rgb(16 24 40),
+     low opacity, large soft blur). */
+  --shadow-soft: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 8px 24px -6px rgb(16 24 40 / 0.08);
+  --shadow-soft-lg: 0 2px 4px 0 rgb(16 24 40 / 0.05), 0 16px 40px -8px rgb(16 24 40 / 0.12);
+  /* Motion, design doc §4.4 -- the one custom keyframe the legacy
+     admin uses for every entrance transition (route content, modal/
+     dropdown/tooltip open, mobile drawer). */
+  --animate-fade-in: fade-in 0.25s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* --primary is the organization brand-color slot -- the one token a
-     dedicated-instance customer's branding is expected to override
-     (ADR-0006). Everything else stays fixed across deployments. */
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Brand palette (design doc §4.1) -- ported from the legacy admin's
+     HSL tokens, not the prior grayscale shadcn defaults. Slightly
+     blue-tinted neutrals (not pure white/black) per the doc's own
+     "pure oklch(1 0 0)/oklch(0.145 0 0) reads colder than Old Admin's
+     actual palette" finding. */
+  --background: hsl(210 40% 99%);
+  --foreground: hsl(215 28% 17%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(215 28% 17%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(215 28% 17%);
+  /* Brand #3B7597 -- the one token a dedicated-instance customer's
+     branding is expected to override (ADR-0006), per
+     platform/theme/theme-store.ts's setBrandPrimaryColor(). */
+  --primary: hsl(202 44% 41%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 30% 96%);
+  --secondary-foreground: hsl(215 25% 27%);
+  --muted: hsl(210 30% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+  /* Accent derived as a light tint of primary (the legacy admin's own
+     202 44% 95%/202 44% 30% relationship), not a neutral gray. */
+  --accent: hsl(202 44% 95%);
+  --accent-foreground: hsl(202 44% 30%);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(152 60% 36%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(38 92% 45%);
+  --warning-foreground: hsl(0 0% 100%);
+  --border: hsl(214 24% 91%);
+  --input: hsl(214 24% 91%);
+  --ring: hsl(202 44% 41%);
 }
 
 :root[data-theme='dark'] {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.556 0 0);
+  --background: hsl(215 19% 22%);
+  --foreground: hsl(210 24% 95%);
+  --card: hsl(215 17% 27%);
+  --card-foreground: hsl(210 24% 95%);
+  --popover: hsl(215 17% 27%);
+  --popover-foreground: hsl(210 24% 95%);
+  --primary: hsl(202 58% 60%);
+  --primary-foreground: hsl(215 28% 14%);
+  --secondary: hsl(215 14% 33%);
+  --secondary-foreground: hsl(210 22% 95%);
+  --muted: hsl(215 14% 33%);
+  --muted-foreground: hsl(215 14% 72%);
+  --accent: hsl(202 34% 38%);
+  --accent-foreground: hsl(202 62% 88%);
+  --destructive: hsl(0 62% 54%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(152 48% 48%);
+  --success-foreground: hsl(215 28% 14%);
+  --warning: hsl(38 84% 58%);
+  --warning-foreground: hsl(215 28% 14%);
+  --border: hsl(215 13% 38%);
+  --input: hsl(215 13% 38%);
+  --ring: hsl(202 58% 60%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 18%);
-    --ring: oklch(0.556 0 0);
+    --background: hsl(215 19% 22%);
+    --foreground: hsl(210 24% 95%);
+    --card: hsl(215 17% 27%);
+    --card-foreground: hsl(210 24% 95%);
+    --popover: hsl(215 17% 27%);
+    --popover-foreground: hsl(210 24% 95%);
+    --primary: hsl(202 58% 60%);
+    --primary-foreground: hsl(215 28% 14%);
+    --secondary: hsl(215 14% 33%);
+    --secondary-foreground: hsl(210 22% 95%);
+    --muted: hsl(215 14% 33%);
+    --muted-foreground: hsl(215 14% 72%);
+    --accent: hsl(202 34% 38%);
+    --accent-foreground: hsl(202 62% 88%);
+    --destructive: hsl(0 62% 54%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --success: hsl(152 48% 48%);
+    --success-foreground: hsl(215 28% 14%);
+    --warning: hsl(38 84% 58%);
+    --warning-foreground: hsl(215 28% 14%);
+    --border: hsl(215 13% 38%);
+    --input: hsl(215 13% 38%);
+    --ring: hsl(202 58% 60%);
   }
 }
 
@@ -115,9 +182,30 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font: 14px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  font: 14px/1.5 var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+/* Latin-reading pages (html[lang="en"]) use Inter as the primary
+   family instead of Tajawal-first -- design doc §4.2, ported from the
+   legacy admin's identical rule. */
+html[lang='en'] body {
+  font-family: var(--font-latin);
 }
 
 #root {
   min-height: 100svh;
+}
+
+/* Calm, low-opacity scrollbar treatment (design doc §4.4's "no
+   scale/translate, colors-only" motion language extended to the one
+   piece of chrome the legacy admin styled: the scrollbar thumb). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
 }
