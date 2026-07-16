@@ -1,12 +1,18 @@
 {
   "shell.emptyWorkspaces.title": "لا توجد مساحات عمل متاحة",
   "shell.emptyWorkspaces.body": "حسابك غير مرخّص أو غير مصرّح له بأي مساحة عمل حتى الآن. تواصل مع المسؤول إذا كنت تعتقد أن هذا خطأ.",
+  "shell.nav.label": "التنقل الرئيسي",
   "shell.nav.collapse": "طي الشريط الجانبي",
   "shell.nav.expand": "توسيع الشريط الجانبي",
+  "shell.nav.openMenu": "فتح التنقل",
+  "shell.breadcrumb.label": "مسار التنقل",
+  "shell.breadcrumb.home": "لوحة التحكم",
   "shell.topbar.search": "بحث…",
   "shell.topbar.notifications": "الإشعارات",
   "shell.topbar.commandPalette": "لوحة الأوامر",
   "shell.topbar.theme": "تبديل المظهر",
+  "shell.topbar.language": "تبديل اللغة",
+  "shell.topbar.userMenu": "قائمة الحساب",
   "shell.topbar.logout": "تسجيل الخروج",
   "shell.login.title": "تسجيل الدخول",
   "shell.login.username": "اسم المستخدم أو البريد الإلكتروني",
@@ -14,6 +20,12 @@
   "shell.login.submit": "تسجيل الدخول",
   "shell.login.error": "لا تتطابق بيانات الاعتماد هذه مع سجلاتنا.",
   "shell.notifications.empty": "لا توجد إشعارات جديدة.",
+  "shell.notifications.emptyHint": "ستظهر الإشعارات هنا بمجرد أن تبدأ إحدى الوحدات بإرسالها.",
+  "shell.search.notConnected": "البحث غير متصل بأي وحدة بعد.",
+  "shell.search.searching": "جارٍ البحث…",
   "shell.commandPalette.placeholder": "اكتب أمرًا أو ابحث…",
-  "shell.commandPalette.noResults": "لا توجد نتائج."
+  "shell.commandPalette.noResults": "لا توجد نتائج.",
+  "shell.commandPalette.commands": "الأوامر",
+  "shell.commandPalette.searchResults": "نتائج البحث",
+  "shell.footer.copyright": "© {{year}} AlphaSchool ERP. جميع الحقوق محفوظة."
 }

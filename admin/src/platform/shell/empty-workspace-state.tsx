@@ -10,7 +10,7 @@ export function EmptyWorkspaceState() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
       <Inbox className="size-10 text-muted-foreground" />
       <h2 className="text-base font-medium">{t('shell.emptyWorkspaces.title')}</h2>
       <p className="max-w-sm text-sm text-muted-foreground">{t('shell.emptyWorkspaces.body')}</p>

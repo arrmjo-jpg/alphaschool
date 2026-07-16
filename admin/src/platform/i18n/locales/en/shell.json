@@ -1,12 +1,18 @@
 {
   "shell.emptyWorkspaces.title": "No workspaces available",
   "shell.emptyWorkspaces.body": "Your account isn't licensed or permitted for any workspace yet. Contact your administrator if you believe this is a mistake.",
+  "shell.nav.label": "Primary",
   "shell.nav.collapse": "Collapse sidebar",
   "shell.nav.expand": "Expand sidebar",
+  "shell.nav.openMenu": "Open navigation",
+  "shell.breadcrumb.label": "Breadcrumb",
+  "shell.breadcrumb.home": "Dashboard",
   "shell.topbar.search": "Search…",
   "shell.topbar.notifications": "Notifications",
   "shell.topbar.commandPalette": "Command palette",
   "shell.topbar.theme": "Toggle theme",
+  "shell.topbar.language": "Toggle language",
+  "shell.topbar.userMenu": "Account menu",
   "shell.topbar.logout": "Log out",
   "shell.login.title": "Sign in",
   "shell.login.username": "Username or email",
@@ -14,6 +20,12 @@
   "shell.login.submit": "Sign in",
   "shell.login.error": "These credentials do not match our records.",
   "shell.notifications.empty": "You're all caught up.",
+  "shell.notifications.emptyHint": "Notifications will appear here once a module starts sending them.",
+  "shell.search.notConnected": "Search isn't connected to any module yet.",
+  "shell.search.searching": "Searching…",
   "shell.commandPalette.placeholder": "Type a command or search…",
-  "shell.commandPalette.noResults": "No results found."
+  "shell.commandPalette.noResults": "No results found.",
+  "shell.commandPalette.commands": "Commands",
+  "shell.commandPalette.searchResults": "Search results",
+  "shell.footer.copyright": "© {{year}} AlphaSchool ERP. All rights reserved."
 }

@@ -15,7 +15,10 @@ export const TooltipContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        'z-50 overflow-hidden rounded-md bg-popover text-popover-foreground border px-3 py-1.5 text-xs shadow-md animate-in fade-in-0 zoom-in-95',
+        // Inverted color scheme (dark bubble on light theme, design doc
+        // §4.1/§10) -- bg-foreground/text-background, not bg-popover,
+        // matching the legacy admin's own tooltip treatment exactly.
+        'z-50 overflow-hidden rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-soft animate-fade-in',
         className,
       )}
       {...props}

@@ -12,7 +12,11 @@ const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn('fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm animate-fade-in', className)}
+    {...props}
+  />
 ))
 
 /**
@@ -21,13 +25,13 @@ const SheetOverlay = React.forwardRef<
  * `start`/`end` logical sides so it flips correctly under RTL rather
  * than needing a separate mirrored variant.
  */
-const sheetVariants = cva('fixed z-50 gap-4 bg-background p-6 shadow-lg border', {
+const sheetVariants = cva('fixed z-50 gap-4 bg-background p-6 shadow-soft-lg animate-fade-in', {
   variants: {
     side: {
-      start: 'inset-y-0 start-0 h-full w-3/4 max-w-sm border-e',
-      end: 'inset-y-0 end-0 h-full w-3/4 max-w-sm border-s',
-      top: 'inset-x-0 top-0 border-b',
-      bottom: 'inset-x-0 bottom-0 border-t',
+      start: 'inset-y-0 start-0 h-full w-3/4 max-w-sm border-e border-border',
+      end: 'inset-y-0 end-0 h-full w-3/4 max-w-sm border-s border-border',
+      top: 'inset-x-0 top-0 border-b border-border',
+      bottom: 'inset-x-0 bottom-0 border-t border-border',
     },
   },
   defaultVariants: { side: 'end' },
