@@ -705,3 +705,58 @@ Consistent with this project's standing discipline for every frozen document: no
 **Explicit instruction carried forward into implementation**: do not imitate Old Admin pixel-by-pixel. Every component mapping in §10, every "keep almost identical" entry in §12, and every token in §4 exists to preserve *identity and feeling*, not to reproduce Old Admin's exact markup, exact class strings, or its own internal inconsistencies (§4.3's dead radius-0 policy chief among them). Where this document identifies a gap between what Old Admin *did* and what it *should have done* (§2's ten UX mistakes, §3's Experience Improvements, §17's technical debt), AlphaSchool ERP implements the improvement, not the inherited flaw — "familiar in the first five minutes, noticeably better after five" (§0) is the acceptance bar for every screen built against this document, not merely "looks the same."
 
 Implementation begins per the sequencing in §15, starting with design tokens alone (§15 step 1), now including the frozen icon library (§19) and informed by the frozen Login Experience specification (§20) as the natural first real proof of the full token system working end-to-end on a single, self-contained, high-visibility page.
+
+---
+
+## 23. Phase B Revision — Icon Sizing & Radius Amendment (2026-07-19)
+
+Per §22's own stated amendment trigger ("implementation exposes a genuine usability problem"), two smallest-possible amendments to the frozen §4.3 and §19.3, both raised during real App Shell (Phase B) implementation review, not a reopened redesign discussion.
+
+### 23.1 Icon Sizing — supersedes §19.3
+
+**Problem.** §19.3's scale was tuned for density, not for AlphaSchool ERP's actual primary users — school principals, administrative staff, finance/HR employees, and teachers, many spending 6–8 hours/day in the system, a meaningful share older users wearing corrective lenses. Readability and recognition speed outrank compactness for this audience.
+
+**New scale**, replacing §19.3's table (defined in `admin/src/lib/icon-sizes.ts` as the single source of truth — `ICON_SIZE.dense` / `.default` / `.prominent` — never a raw `size-*` class on a semantic icon):
+
+| Tier | Size | Tailwind | Applies to |
+|---|---|---|---|
+| **Dense** | 20px | `size-5` | Table/dense-data cells, inline row actions, toolbar buttons, user-menu items, form-field icons |
+| **Default** | 24px | `size-6` | Sidebar nav, topbar actions (search, command palette, notifications, theme/language), primary buttons |
+| **Prominent** | 28px | `size-7` | Status panels (Loading/Error/Empty state), dashboard/KPI card icons |
+
+Click targets and spacing were re-verified after the increase (Phase B revision browser pass, 2026-07-19): icon buttons hold at a 40px (`size-10`) hit target, inputs at `h-10`, avatar at `size-9` — all comfortably above the icon's own bounding box at every tier, so the larger icons did not force a corresponding hit-target increase.
+
+**Real bug found and fixed in the same pass, not merely a size change**: `[&_svg]:size-4`-style descendant rules on `Button` and `DropdownMenuItem` have *higher* CSS specificity than a plain `size-*` class on the icon element itself, silently overriding any component-level icon explicitly sized per this scale. Both now use the `[&_svg:not([class*='size-'])]:size-N` guard — a default for icons that don't specify a size, never an override for ones that do. Any future component following the same descendant-default pattern must use the same guard.
+
+Small status/count indicators (unread badges, unread dots, breadcrumb chevron separators) are deliberately outside this scale, unchanged — they are not primary icons and were never governed by §19.3.
+
+### 23.2 Radius — supersedes §4.3's radius paragraph and its `--radius`/`sm`/`md`/`lg`/`xl` calc-derived scale
+
+**Problem.** §4.3's adopted scale (10px base, `calc()`-derived tiers up to `--radius-xl` ≈ 14px, with several App Shell components independently reaching for Tailwind's own `rounded-2xl`/`rounded-3xl` defaults on top of that) reads as softer and more consumer-oriented than the "professional, stable, enterprise-grade, information-focused" surface this product should present.
+
+**New scale** (`admin/src/index.css`'s `@theme` block, four independent flat tokens, none derived from the others):
+
+| Token | Value | Tailwind utility |
+|---|---|---|
+| `--radius-none` | 0px | `rounded-none` |
+| `--radius-sm` | 4px | `rounded-sm` |
+| `--radius-md` | 6px | `rounded-md` |
+| `--radius-lg` | 8px | `rounded-lg` |
+
+`rounded-lg` (8px) is the ceiling — no `xl`/`2xl`/`3xl` tier is defined, and every component previously using one was remapped to a tier above. `rounded-full` remains available, unchanged, for genuinely circular elements (Avatar, unread-count badge, unread dot, Badge, user-menu trigger) — a separate design-language decision, not an exception carved into this scale.
+
+Per-surface application, superseding any conflicting radius choice made during initial Phase B implementation:
+
+| Surface | Tier |
+|---|---|
+| Sidebar (outer panel) | none |
+| Navigation items (sidebar links, group headers, collapse toggle) | `sm` |
+| Tables, page containers | none |
+| Cards, dashboard widgets | `sm`–`md` (4–6px, never more) |
+| Dropdowns, popovers, tooltips, skeleton placeholders | `md` |
+| Dialogs, the Command Palette | `lg` (the enterprise ceiling — "moderate," never larger) |
+| Buttons, inputs, selects | `md` (already-correct, unchanged) |
+
+### 23.3 Status
+
+Both amendments are implemented and browser-verified (real login, LTR/RTL, light theme) against the running App Shell as of 2026-07-19. This section, together with §19.3 and §4.3's radius paragraph (left in place for historical record of the original reasoning, now superseded by §23.1/§23.2), is the complete, current statement of these two token systems. No further icon-sizing or radius discussion is expected unless implementation exposes a new, genuine usability problem — the same standing rule as §22.
