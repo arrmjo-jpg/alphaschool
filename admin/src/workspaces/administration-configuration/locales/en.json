@@ -13,5 +13,7 @@
   "detail.save": "Save changes",
   "detail.cancel": "Cancel",
   "detail.saving": "Saving…",
-  "detail.selectCategory": "Select a category to view its settings."
+  "status.ready": "Ready",
+  "status.needs-setup": "Needs Setup",
+  "status.error": "Error"
 }

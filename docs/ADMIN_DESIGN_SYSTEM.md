@@ -940,3 +940,11 @@ Administration's children are discovered **exclusively** through the existing `W
 ### 26.14 Status
 
 Frozen design. Phase E-A implementation begins next; Phase E-B is a separately-scoped, later task.
+
+### 26.15 Overview Grid Refinement (2026-07-19)
+
+An append-only amendment to §26.3/§26.5, not a supersession of the two-pane rail+content interface itself — that interface is unchanged, it simply stops being the first thing a user sees.
+
+System Settings now lands on a responsive card-grid overview (3 columns desktop / 2 tablet / 1 mobile) before the rail+detail interface, each card representing one configuration area: a soft outline icon, the area's name, a single status indicator (`Ready` / `Needs Setup` / `Error`, shown as a small colored badge — never a chart, counter, or stat), and an optional one-line secondary note (e.g. the active provider). The entire card is clickable and opens the existing two-pane interface with that category pre-selected; a back affordance (now shown on every breakpoint, not mobile-only as originally built) returns to the overview.
+
+Deliberately modeled on modern Settings-surface precedent (Apple/Linear/Notion/Stripe), not an analytics-dashboard precedent — this is why status is a single small badge, never a number, and why no chart or counter is permitted on a card regardless of what data becomes available once Phase E-B ships. `SettingCategory` (§26.13) gained `icon`, `status`, and an optional `secondaryLine` to support this — an additive extension of the same provider contract, not a new mechanism; Phase E-B's job is unchanged, only the shape of what it returns grew by three fields. Visual treatment stays inside the frozen enterprise radius scale (§23.2) — cards use `rounded-md`, not a larger radius, so this refinement does not reopen the flatter, more enterprise-appropriate surface §23 already established.

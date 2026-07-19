@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react'
+
 /**
  * The Configuration Platform data contract (docs/ADMIN_DESIGN_SYSTEM.md
  * §26.7/§26.13) -- mirrors SearchProviderDefinition's "zero registered
@@ -38,9 +40,15 @@ export type SettingFieldValue = {
   approvalRequired: boolean
 }
 
+export type SettingCategoryStatus = 'ready' | 'needs-setup' | 'error'
+
 export type SettingCategory = {
   key: string
   labelKey: string
+  icon: LucideIcon
+  status: SettingCategoryStatus
+  /** Optional short line, e.g. the active provider name -- never a chart, count, or stat. */
+  secondaryLine?: string
 }
 
 export type ConfigurationDataProvider = {

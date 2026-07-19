@@ -13,5 +13,7 @@
   "detail.save": "حفظ التغييرات",
   "detail.cancel": "إلغاء",
   "detail.saving": "جارٍ الحفظ…",
-  "detail.selectCategory": "اختر فئة لعرض إعداداتها."
+  "status.ready": "جاهز",
+  "status.needs-setup": "يحتاج إعداد",
+  "status.error": "خطأ"
 }
