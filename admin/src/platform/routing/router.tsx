@@ -3,6 +3,7 @@ import { createRootRoute, createRoute, createRouter, Navigate, Outlet, redirect 
 import { AppShell } from '@/platform/shell/app-shell'
 import { HomePage } from '@/platform/shell/home-page'
 import { LoginPage } from '@/platform/shell/login-page'
+import { WorkspaceBootstrap } from '@/platform/shell/workspace-bootstrap'
 import { WorkspaceRoutePage } from '@/platform/shell/workspace-route-page'
 import { useAuthStore } from '@/platform/auth/auth-store'
 import { ModalHost } from '@/platform/modals/modal-host'
@@ -42,7 +43,11 @@ const protectedLayoutRoute = createRoute({
       throw redirect({ to: '/login' })
     }
   },
-  component: AppShell,
+  component: () => (
+    <WorkspaceBootstrap>
+      <AppShell />
+    </WorkspaceBootstrap>
+  ),
 })
 
 const indexRoute = createRoute({
