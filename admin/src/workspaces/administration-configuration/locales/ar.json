@@ -15,5 +15,6 @@
   "detail.saving": "جارٍ الحفظ…",
   "status.ready": "جاهز",
   "status.needs-setup": "يحتاج إعداد",
-  "status.error": "خطأ"
+  "status.error": "خطأ",
+  "status.disabled": "غير متاحة"
 }

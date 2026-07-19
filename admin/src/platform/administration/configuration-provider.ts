@@ -40,7 +40,7 @@ export type SettingFieldValue = {
   approvalRequired: boolean
 }
 
-export type SettingCategoryStatus = 'ready' | 'needs-setup' | 'error'
+export type SettingCategoryStatus = 'ready' | 'needs-setup' | 'error' | 'disabled'
 
 export type SettingCategory = {
   key: string

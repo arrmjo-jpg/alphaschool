@@ -15,5 +15,6 @@
   "detail.saving": "Saving…",
   "status.ready": "Ready",
   "status.needs-setup": "Needs Setup",
-  "status.error": "Error"
+  "status.error": "Error",
+  "status.disabled": "Not Available"
 }

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { SettingCategory, SettingCategoryStatus } from '@/platform/administration/configuration-provider'
 import { Badge } from '@/platform/components/ui/badge'
 import { ICON_SIZE } from '@/lib/icon-sizes'
+import { cn } from '@/lib/cn'
 
 /**
  * The System Settings landing page (a UX refinement on top of Phase
@@ -11,11 +12,20 @@ import { ICON_SIZE } from '@/lib/icon-sizes'
  * counters, no stats -- name, one status badge, an optional one-line
  * secondary note, nothing else. Modern Settings-surface precedent
  * (Apple/Linear/Notion/Stripe), not an analytics precedent.
+ *
+ * Two explicit, scoped exceptions to previously-frozen tokens, both
+ * requested deliberately for this card family specifically, not a
+ * silent drift: `rounded-none` (§23.2's enterprise radius scale caps
+ * cards at 4-6px, never square) and the hover lift (§4.4 explicitly
+ * froze "no scale/translate hover effects anywhere" as a considered
+ * rule). Recorded in docs/ADMIN_DESIGN_SYSTEM.md as named amendments
+ * rather than left as an undocumented mismatch between code and doc.
  */
-const STATUS_VARIANT: Record<SettingCategoryStatus, 'success' | 'warning' | 'destructive'> = {
+const STATUS_VARIANT: Record<SettingCategoryStatus, 'success' | 'warning' | 'destructive' | 'muted'> = {
   ready: 'success',
   'needs-setup': 'warning',
   error: 'destructive',
+  disabled: 'muted',
 }
 
 export function SettingsOverviewGrid({
@@ -28,15 +38,22 @@ export function SettingsOverviewGrid({
   const { t } = useTranslation('administration-configuration')
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
       {categories.map((category) => {
         const Icon = category.icon
+        const disabled = category.status === 'disabled'
         return (
           <button
             key={category.key}
             type="button"
+            disabled={disabled}
             onClick={() => onSelect(category.key)}
-            className="flex flex-col items-start gap-3 rounded-md border border-border bg-card p-6 text-start text-card-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              'flex flex-col items-center gap-3 rounded-none border border-border bg-card p-6 text-center text-card-foreground shadow-soft outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-ring',
+              disabled
+                ? 'cursor-not-allowed opacity-60'
+                : 'hover:-translate-y-0.5 hover:shadow-soft-lg',
+            )}
           >
             <Icon className={ICON_SIZE.prominent} aria-hidden="true" />
             <span className="text-sm font-medium">{t(category.labelKey, category.labelKey)}</span>
