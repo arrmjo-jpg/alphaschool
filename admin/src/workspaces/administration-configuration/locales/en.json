@@ -1,0 +1,17 @@
+{
+  "workspace.label": "System Settings",
+  "workspace.group.label": "Administration",
+  "categories.empty.title": "No settings categories yet",
+  "categories.empty.body": "Categories will appear here once Configuration Platform is connected.",
+  "categories.notConnected.title": "Configuration Platform isn't connected yet",
+  "categories.notConnected.body": "This workspace's real settings data will appear here once the backend integration ships.",
+  "detail.usingGlobalDefault": "Using the global default",
+  "detail.resolvedFromBranch": "Set for this branch",
+  "detail.resolvedFromUser": "Your personal preference",
+  "detail.viewOnlyNote": "You can view this setting but don't have permission to change it.",
+  "detail.approvalRequiredNote": "Changing this setting requires approval.",
+  "detail.save": "Save changes",
+  "detail.cancel": "Cancel",
+  "detail.saving": "Saving…",
+  "detail.selectCategory": "Select a category to view its settings."
+}

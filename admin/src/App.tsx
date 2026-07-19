@@ -4,9 +4,11 @@ import { queryClient } from '@/lib/query-client'
 import { router } from '@/platform/routing/router'
 import { TooltipProvider } from '@/platform/components/ui/tooltip'
 import { registerStaticCommands } from '@/platform/command-palette/register-static-commands'
+import { registerConfigurationPlatformWorkspace } from '@/workspaces/administration-configuration/register'
 import '@/platform/i18n'
 
 registerStaticCommands()
+registerConfigurationPlatformWorkspace()
 
 export default function App() {
   return (
