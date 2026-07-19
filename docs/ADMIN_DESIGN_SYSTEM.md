@@ -873,3 +873,70 @@ A dedicated capability check (2026-07-19) found that most of the sections a genu
 - **Global Context** — deliberately not a Dashboard section; it is Topbar chrome (§24), and duplicating it here would render the same information twice.
 
 None of these are blocked by this phase's design — §25.1's registration model is exactly the mechanism each will use to plug in once its owning module is ready.
+
+---
+
+## 26. Administration Workspace — Reference Implementation (Frozen 2026-07-19)
+
+Reached through a dedicated UX/product-design review across information architecture, navigation, settings hierarchy, page templates, permission model, configuration philosophy, layout patterns, empty states, responsive behavior, and accessibility, before any code — same discipline as every prior phase.
+
+### 26.1 Purpose and Scope
+
+Administration Workspace is the reference implementation for **configuration-oriented** workspaces specifically, not for every future workspace. Entity-CRUD workspaces (Students, Finance, HR, Library) are a different shape — lists, detail records, create/edit forms — already served by the `DataTable`/`Form` frameworks (Phase 13), and need their own reference proof separately; conflating the two would either pull this workspace toward concerns it doesn't have or leave the entity-CRUD pattern under-designed. First implemented child: **Configuration Platform** (§8.3's nine-child Administration group), the most backend-mature capability (Phase 1).
+
+### 26.2 Information Architecture and Naming
+
+Honors §8.3 verbatim — `Administration` (group) → nine children, with only Configuration Platform registered in this phase; the other eight remain unregistered until their own phases, the same "zero is correct" discipline as the Workspace registry itself. Within Configuration Platform, settings are organized by category (Identity/OTP today; Media/Storage, Notifications/Email later).
+
+**Naming is deliberately two separate things.** "Configuration Platform" is the architectural capability name — it matches the Administration Platform Blueprint's own vocabulary and stays fixed in code, docs, and the backend contract. The end-user-facing navigation label is a distinct, independently-evolvable UX decision, resolved through the existing `labelKey`/i18n mechanism every other workspace already uses (e.g. it may read "System Settings" in the UI) — never hardcoded to the architectural name. A strict one-to-one mapping is maintained between the two; only the label's wording is free to evolve without touching the architecture, the registry key, or any backend contract.
+
+### 26.3 Navigation Model
+
+Two-pane: a search-augmented category rail (left) + the selected category's form (main). Breadcrumb: Home → Administration → [nav label] → [Category], via the existing multi-level `Breadcrumb`, unchanged.
+
+### 26.4 Settings Hierarchy
+
+Global→Branch→User altitude chain from `SettingsResolver`. A Branch-scoped field's edit view honors the currently-selected Branch from Global Context (§24) — explicit coherence between the two systems, never a bypass (§24.9 applies in full). Each field shows which altitude it is *currently resolving from* (Global default / Branch override / User preference) once the resolver's trace is reachable (§26.13).
+
+### 26.5 Page Templates
+
+`SettingsCategoryList` (rail) + `SettingsCategoryDetail` (card-sectioned form, `StickyActionBar` save, per the already-frozen §10 note) + a generic field renderer keyed off data type, reusing the existing `TextField`/React Hook Form + Zod convention. Approval-gated writes reuse the risk-tiered confirmation taxonomy (§M4/§M7/§M9) already proven for Global Context (§24.5) — a second consumer of the same mechanism, not a new one.
+
+### 26.6 Permission Model
+
+Real, seeded permission strings exist (`identity.view-otp-settings`/`identity.configure-otp-settings`, the view/edit split per ADR-0018 Decision 9) but are granted to no role by default today — only `is_super_admin`'s client-side bypass sees anything currently. View-but-not-edit renders disabled with an explanatory note, never hidden. A category with zero visible permitted settings does not appear in the rail at all (§8.4, extended one level deeper).
+
+### 26.7 Configuration Philosophy
+
+This workspace's entire purpose is showing *real* resolved values — unlike Login's wordmark fallback, there is no meaningful default to fall back to. Honesty here means real data or an explicit "not yet connected" state, never a plausible-looking mock.
+
+### 26.8 Reusable Layout Patterns
+
+The two-pane rail+content shape, `StickyActionBar`, card-sectioned form groups, and the existing `WorkspaceHeader` — deliberately reusable by Administration's other eight children and by any future workspace's own settings page.
+
+### 26.9 Empty States
+
+Three distinct conditions, not one generic state: zero categories registered system-wide (a System-Initialization-style message, §25.2's precedent); a category exists with no Branch-level override set ("using Global default" — a real, non-broken state, not an error); no permission to view a category (absent from the rail entirely, per §26.6).
+
+### 26.10 Responsive Behavior
+
+Two-pane desktop collapses to a single-pane drill-down on mobile (category list → detail → back) — never a hidden rail, matching the Sidebar (§5) and Login brand column (§20.1) precedent.
+
+### 26.11 Accessibility
+
+Category rail as a real nav landmark (`aria-label`, matching `Breadcrumb`/`SideNav`'s existing convention). `StickyActionBar`'s Save button needs a deliberately sensible keyboard tab order on long forms — sticky visual positioning alone does not fix tab order.
+
+### 26.12 Registration Principle
+
+Administration's children are discovered **exclusively** through the existing `WorkspaceDefinition` registration mechanism (§8.2's `group` field) — the same registry every other workspace already uses, never a bespoke Administration-only mechanism. The Administration Workspace shell itself never assumes any specific child is present: it must render correctly with zero children registered (the Workspace registry's own zero-is-correct discipline, unchanged), with only Configuration Platform registered (this phase's actual state), or with all nine eventually registered — no conditional logic anywhere keyed to a specific child's presence. This is ADR-0015 Decision 4's extension-point discipline, applied one level deeper, inside the Administration group itself.
+
+### 26.13 Implementation Plan
+
+- **Phase E-A (frontend infrastructure)**: layout, navigation, page templates, permission-aware rendering, responsive behavior, accessibility, and empty-state handling — verified against a temporary, fully-reverted fixture (the same discipline already proven for Phase B's Sidebar and Phase D), since real data flow does not exist yet.
+- **Phase E-B (Configuration Platform integration)**: a thin adapter-layer REST API exposing `SettingsResolver`/`ConfigurationRegistry` (and later `ProviderManager` for Provider Registry) — reusing existing services verbatim, no business-logic changes, HTTP wiring only. Sequenced after E-A, explicitly scoped, preserving the standing rule that backend capability is exposed before the UI depends on it.
+
+**API stability principle.** Once E-B ships it, the REST API surface becomes the stable public contract between frontend and backend — its shape (request/response structure, field names, error format) is what the frontend depends on and must not change without a deliberate, versioned decision. The internal PHP services behind it (`SettingsResolver`, `ConfigurationRegistry`, `ProviderManager`) remain free to evolve, refactor, or be reimplemented entirely, as long as the contract they serve stays stable — the adapter/controller layer is the boundary that insulates the frontend from internal implementation churn, never a pass-through that couples the two.
+
+### 26.14 Status
+
+Frozen design. Phase E-A implementation begins next; Phase E-B is a separately-scoped, later task.
