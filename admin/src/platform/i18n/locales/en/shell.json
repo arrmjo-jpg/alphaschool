@@ -1,6 +1,8 @@
 {
   "shell.emptyWorkspaces.title": "No workspaces available",
   "shell.emptyWorkspaces.body": "Your account isn't licensed or permitted for any workspace yet. Contact your administrator if you believe this is a mistake.",
+  "shell.systemInit.title": "AlphaSchool ERP is ready",
+  "shell.systemInit.body": "Widgets, quick actions, and notifications will appear here automatically as modules are enabled.",
   "shell.nav.label": "Primary",
   "shell.nav.collapse": "Collapse sidebar",
   "shell.nav.expand": "Expand sidebar",

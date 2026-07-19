@@ -824,3 +824,52 @@ Global Context defines the application's default **working** context only — wh
 - Every mutation, whatever Global Context it inherits its default scope/year from, remains subject to the same permission checks, validation, and approval workflows any other write in the system already goes through. Global Context changes what a form is pre-filled with; it changes nothing about whether submitting that form succeeds.
 
 This clause exists specifically to foreclose a plausible but wrong implementation shortcut: treating "currently selected Branch/Year" as equivalent to "authorized for that Branch/Year." They are two independent systems that happen to share one UI surface — the Context Panel supplies defaults, the permission/approval system decides what's actually allowed — and must never be conflated into one.
+
+---
+
+## 25. Dashboard Shell (Frozen 2026-07-19)
+
+Reached through a dedicated design review that deliberately rejected a framework-first framing ("a container for future widgets") in favor of a user-first one: a school principal, accountant, HR employee, or teacher should feel the Dashboard answers "what do I need to know and do right now" — even though, as of this freeze, almost nothing that could genuinely answer that question yet exists as real backend capability (§25.5). This phase builds the shell only: layout, composition, the widget registration model, and empty-state discipline. It owns no business domain and no backend work (§25.3).
+
+### 25.1 Composition
+
+`HomePage` becomes the Dashboard shell — extended, not replaced by a second landing page. Three existing, independently-proven mechanisms compose on one page, deliberately not unified into one new abstraction (they already have different shapes, and forcing them together now would be speculative):
+
+1. **Quick Actions** (top) — the existing Phase B registry, previously feeding only the Command Palette; this phase adds it as a second surface here.
+2. **Registered Widgets** (main area) — the one genuinely new mechanism: a registration model mirroring `WorkspaceDefinition`'s own pattern, so a future workspace can *optionally* contribute a widget to the shared landing Dashboard. This phase builds the registry, the grid, and permission-aware rendering only — never a specific widget.
+3. **Notifications** (compact summary) — the existing Phase B hook, a denser second presentation of the same honest-empty-state `NotificationCenter` already proves.
+
+**Workspace Launcher** (the existing tile grid) stays exactly as it is today, unchanged, anchoring the page beneath the above.
+
+### 25.2 System Initialization vs. Operational Empty States
+
+Two genuinely different empty conditions, requiring two different messages, distinguished by a precise, already-available signal rather than a single generic "nothing here" state:
+
+| State | Signal | Meaning | Message |
+|---|---|---|---|
+| **System Initialization** | `getRegisteredWorkspaces()` (the local, static, build-time registry) is empty | No workspace module has been *built into this deployment* at all — a deployment-level fact, true for every user, not a permission gap | A calm, singular onboarding message: widgets, quick actions, and notifications will appear automatically as modules are enabled. Not fake content or a placeholder widget — a genuine product-level onboarding state, replacing the entire page as its sole content, exactly as `EmptyWorkspaceState` does today. |
+| **Operational Empty State** | `getRegisteredWorkspaces()` is non-empty, but `useVisibleWorkspaces()` (the server-filtered, per-user list) returns empty | Workspaces exist in this deployment; this specific user isn't licensed/permitted for any of them | The existing `EmptyWorkspaceState` copy, unchanged — "your account isn't licensed or permitted... contact your administrator" is correct here, specifically because it is *not* true during System Initialization. |
+
+Conflating these was a real risk worth naming explicitly: once real workspaces ship, telling a fresh installation's own Super Admin to "contact your administrator" — when they *are* the administrator, mid-setup — would be actively wrong, not merely unpolished. The two states must never share one message.
+
+Within an *individual* section (Quick Actions, Registered Widgets, Notifications) once at least one workspace is visible, each section's own existing empty-state convention applies independently and quietly (Quick Actions/Widgets render nothing at zero, matching the "correct with zero" bar already set in Phase B; Notifications keeps its existing "you're all caught up" copy) — these are ordinary Operational Empty States, not System Initialization, and do not need the onboarding message repeated per-section.
+
+### 25.3 Design Principle — Presentation and Composition Only
+
+**The Dashboard owns presentation and composition only. Every business capability contributes exclusively through registration.** The shell defines *how* a workspace, a widget, a quick action, or a notification appears — layout, grid behavior, permission-aware rendering, empty-state rules — and never *what* business data appears. No phase that touches the Dashboard shell may add a named, domain-specific section (a Finance KPI, an Approvals list, a Schedule view) directly into the shell's own code; every such capability must arrive as a registration from its owning module, exactly as workspaces already do via `WorkspaceDefinition`. This is the same extension-point discipline already governing `AppShell`/nav/routing (ADR-0015 Decision 4), applied to the Dashboard specifically because "operational from day one" is a strong pull toward embedding real-seeming content directly into shell code — a pull this principle exists to resist.
+
+### 25.4 Status
+
+Frozen design, not yet implemented in code as of this freeze. `Registered Widgets` is the only genuinely new mechanism this phase adds; `Quick Actions` and `Notifications` are existing Phase B primitives gaining a second surface. Implementation is scoped to the shell only — no backend work, no first widget, no Approval Engine list endpoint (§25.5) — per §25.3.
+
+### 25.5 Deferred, Not Owned By This Phase
+
+A dedicated capability check (2026-07-19) found that most of the sections a genuinely operational Dashboard would need do not exist as real backend capability yet, and this phase deliberately does not build any of them:
+
+- **My Pending Approvals** — the Approval Engine (Core) is real and mature, but has no list/query capability at all, not even "list all approval requests," let alone one scoped to the current user. The most likely first real widget once that gap closes, but that backend work belongs to whichever phase owns it, not this one.
+- **Recent Activity** — Spatie Activitylog is genuinely recording data across the codebase, but no API exposes any of it yet.
+- **Today's Schedule** — no Timetable/Scheduling module exists at all.
+- **Critical Alerts** — no mechanism beyond Notifications itself (already empty-state-only today) — not a distinct real capability.
+- **Global Context** — deliberately not a Dashboard section; it is Topbar chrome (§24), and duplicating it here would render the same information twice.
+
+None of these are blocked by this phase's design — §25.1's registration model is exactly the mechanism each will use to plug in once its owning module is ready.

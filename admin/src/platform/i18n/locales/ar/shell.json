@@ -1,6 +1,8 @@
 {
   "shell.emptyWorkspaces.title": "لا توجد مساحات عمل متاحة",
   "shell.emptyWorkspaces.body": "حسابك غير مرخّص أو غير مصرّح له بأي مساحة عمل حتى الآن. تواصل مع المسؤول إذا كنت تعتقد أن هذا خطأ.",
+  "shell.systemInit.title": "نظام AlphaSchool ERP جاهز",
+  "shell.systemInit.body": "ستظهر الأدوات والإجراءات السريعة والإشعارات هنا تلقائيًا مع تفعيل الوحدات.",
   "shell.nav.label": "التنقل الرئيسي",
   "shell.nav.collapse": "طي الشريط الجانبي",
   "shell.nav.expand": "توسيع الشريط الجانبي",
