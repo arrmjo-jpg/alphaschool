@@ -760,3 +760,57 @@ Per-surface application, superseding any conflicting radius choice made during i
 ### 23.3 Status
 
 Both amendments are implemented and browser-verified (real login, LTR/RTL, light theme) against the running App Shell as of 2026-07-19. This section, together with §19.3 and §4.3's radius paragraph (left in place for historical record of the original reasoning, now superseded by §23.1/§23.2), is the complete, current statement of these two token systems. No further icon-sizing or radius discussion is expected unless implementation exposes a new, genuine usability problem — the same standing rule as §22.
+
+---
+
+## 24. Global Context Model — Organization, Branch, Academic Year (Frozen 2026-07-19)
+
+A new append-only addition, not a supersession — no prior section of this document specified a Global Context concept. Reached through a dedicated UX review (not implemented in code as of this freeze; see §24.8) that deliberately challenged the original proposal before converging here.
+
+### 24.1 Model
+
+Organization, Branch, and Academic Year are **Global Application Context**, not page-level filters. A user navigating between Students, Attendance, Grades, Timetable, and Finance stays inside the same working context across all of them without re-specifying it per screen — both what they see by default, and what a newly-created record targets by default (a new attendance entry, a new grade, a new timetable slot all need an implicit "which year" without asking every time).
+
+### 24.2 Context Control
+
+A single, unified Context control lives in the Topbar — e.g. "AlphaSchool Amman • Main Branch • 2025–2026" — opening one panel to adjust any of the three, rather than three independent dropdowns competing for space. One mental model ("where am I right now"), and it scales cleanly if a future context dimension is ever added. Organization and Branch are scope axes; Academic Year is the only time axis among the three, which is why §24.3–§24.5 apply to Year specifically and not to Organization/Branch switching.
+
+### 24.3 Switching Behavior
+
+Selecting a different Academic Year inside the Context Panel does not apply instantly. It surfaces a lightweight, explicit **Switch** step inline within the same panel — never a separate modal, never a blocking popup:
+
+```
+Switch Context
+Current:  2025–2026
+          ↓
+          2024–2025
+[Cancel]  [Switch]
+```
+
+This is deliberately proportioned: heavier than a plain filter (correct — Global Context recontextualizes every open workspace and tab at once, which is a genuine disorientation risk even though it carries no data risk on its own), lighter than a blocking confirmation dialog (correct — browsing a past year is safe by construction; see §24.5 for where real protection actually lives).
+
+### 24.4 Working vs. System Active Academic Year
+
+Whenever the selected (Working) Academic Year differs from the system's actual current (Active) year, the Topbar always shows both, distinctly, using calm/muted styling — never `--warning`/`--destructive`. A user must never be able to look at the shell and mistake a historical Working Year for the system's actual current year, whether because they switched it themselves earlier in the session or because they're looking at a colleague's screen. Exact layout (stacked two-line label vs. a "Viewing Historical Year" caption) is an implementation-time visual decision, not a UX-model constraint.
+
+### 24.5 Write Boundary Protection
+
+Protection lives at the point of mutation, not at the Context Switch — this is the central UX principle of this section. Browsing a historical Academic Year is always low-friction and safe; a create/update/delete targeting a non-active year is where real protection applies:
+
+1. **Permission gate** — a distinct `modify-historical-records` permission, separate from `view-historical-records`, reusing the view/edit permission-split convention already frozen elsewhere (ADR-0018 Decision 9). Without it, the mutating control is disabled with an explanatory tooltip, never shown-then-warned.
+2. **Risk-tiered confirmation** — reusing the existing risk taxonomy (reversible / destructive / high-blast-radius, §M4/§M7/§M9) rather than one generic "this is historical" dialog regardless of the mutation's actual size or reversibility.
+3. **Approval routing for the top tier** — through the already-built Approval Engine, with a mandatory recorded reason, exactly how every other high-blast-radius action in this system already works. No bespoke, weaker, frontend-only mechanism invented specifically for Academic Year.
+
+### 24.6 Persistence
+
+Global Context (Organization, Branch, and Academic Year together, as one unit) persists via the same mechanism already established elsewhere in the App Shell (Zustand + `persist`, matching `sidenav-store.ts`'s pattern) for the duration of the authenticated session — page reloads and additional tabs under the same login retain the selection. **On every fresh login, Global Context resets to system defaults** (the user's default/primary Branch, the system's current Academic Year), never restored from a prior session's selection.
+
+This is a first-principles decision, not a port of an existing Branch-context policy — none exists. A dedicated codebase check (2026-07-19) confirmed the Admin Platform Foundation has no branch-switcher concept today: permissions are computed as a union across all of a user's branches specifically because no "current branch" exists yet (`User.php`'s own docblock states this explicitly), no backend endpoint returns a current branch/team, and no frontend store holds one. Global Context is therefore the first implementation of this concept for all three dimensions together — reset-on-login was chosen specifically because it closes the same "stale historical context silently surviving into a new session" risk that §24.5's write-boundary protection exists to guard against, at zero practical cost (most logins default to the current Branch and current Year regardless).
+
+### 24.7 Branch / Academic Year Validity
+
+The application must never sit in an invalid Branch/Academic Year pairing. If a Branch switch leaves the currently-selected Academic Year unavailable for the new Branch, the system automatically corrects to that Branch's active Academic Year — immediately, without a blocking dialog (this is a system-initiated validity correction, not a deliberate user switch, so §24.3's explicit-switch friction does not apply) — and surfaces a brief, non-blocking inline notice in the Context Panel (e.g. "Academic Year switched to 2025–2026 — not available for [Branch Name]"), so the correction is always visible, never silent.
+
+### 24.8 Status
+
+This section is a frozen **design decision**, not yet implemented in code — no Global Context control, store, or write-boundary guard exists in `admin/` as of this freeze. It is ready to be picked up as its own implementation slice, sequenced at the point the product owner chooses (not necessarily inside Phase B's remaining closeout). Phase B (App Shell: Sidebar, Topbar, Breadcrumb, Notification Center, Search, Command Palette, and their 2026-07-19 icon/radius revision, §23) is considered complete as implemented; Global Context Model is a separately-tracked, frozen-but-unbuilt addition, not a blocker on Phase C.
