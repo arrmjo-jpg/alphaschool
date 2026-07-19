@@ -13,13 +13,14 @@ import { cn } from '@/lib/cn'
  * secondary note, nothing else. Modern Settings-surface precedent
  * (Apple/Linear/Notion/Stripe), not an analytics precedent.
  *
- * Two explicit, scoped exceptions to previously-frozen tokens, both
- * requested deliberately for this card family specifically, not a
- * silent drift: `rounded-none` (§23.2's enterprise radius scale caps
- * cards at 4-6px, never square) and the hover lift (§4.4 explicitly
- * froze "no scale/translate hover effects anywhere" as a considered
- * rule). Recorded in docs/ADMIN_DESIGN_SYSTEM.md as named amendments
- * rather than left as an undocumented mismatch between code and doc.
+ * Implements the Overview Grid Pattern (§26.16) -- a named, reusable
+ * pattern for high-density navigation surfaces, alongside (not instead
+ * of) the standard Card treatment §23.2/§4.4 govern everywhere else.
+ * `rounded-none` and the hover lift are this pattern's own defining
+ * traits, not exceptions carved into the standard scale -- any future
+ * overview/navigation grid (Provider Registry, Integrations, AI
+ * Providers) should reach for this same pattern, while ordinary
+ * detail/content surfaces keep using standard Cards unchanged.
  */
 const STATUS_VARIANT: Record<SettingCategoryStatus, 'success' | 'warning' | 'destructive' | 'muted'> = {
   ready: 'success',

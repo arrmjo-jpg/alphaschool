@@ -949,16 +949,22 @@ System Settings now lands on a responsive card-grid overview (3 columns desktop 
 
 Deliberately modeled on modern Settings-surface precedent (Apple/Linear/Notion/Stripe), not an analytics-dashboard precedent — this is why status is a single small badge, never a number, and why no chart or counter is permitted on a card regardless of what data becomes available once Phase E-B ships. `SettingCategory` (§26.13) gained `icon`, `status`, and an optional `secondaryLine` to support this — an additive extension of the same provider contract, not a new mechanism; Phase E-B's job is unchanged, only the shape of what it returns grew by three fields. Visual treatment stays inside the frozen enterprise radius scale (§23.2) — cards use `rounded-md`, not a larger radius, so this refinement does not reopen the flatter, more enterprise-appropriate surface §23 already established.
 
-### 26.16 Overview Grid Visual Revision (2026-07-19)
+### 26.16 The Overview Grid Pattern (2026-07-19)
 
-A same-day amendment to §26.15, superseding its grid-column count and its radius statement specifically — the card content model (icon, name, one status badge, optional secondary line, no charts/counters/stats) and the card→two-pane→back interaction are unchanged.
+A same-day amendment to §26.15, superseding its grid-column count — the card content model (icon, name, one status badge, optional secondary line, no charts/counters/stats) and the card→two-pane→back interaction are unchanged.
 
 **Grid**: 6 columns on large desktop, 4 on medium, 2 on tablet, 1 on mobile — supersedes §26.15's 3/2/1. Verified live at exactly these four breakpoints.
 
-**Two explicit, scoped exceptions to previously-frozen tokens**, both requested deliberately for this card family, not a silent drift:
+**A named pattern, not a list of exceptions.** The System Settings overview card treatment — square corners, soft elevation, a subtle hover lift — is not a one-off deviation from §23.2/§4.4 tolerated for this single page. It is the **Overview Grid Pattern**: a distinct, reusable UI pattern for high-density navigation surfaces, alongside (not instead of) the standard Card treatment those two sections already govern.
 
-- **Zero border-radius** (`rounded-none`) on these cards specifically. §23.2's enterprise radius scale caps cards at 4–6px, never square — this card family now goes further than that ceiling, on purpose, for a sharper, more Stripe/Linear-adjacent surface. §23.2's table is not changed for any other card in the product; this is a named, scoped exception, not a reopening of the radius scale generally.
-- **A hover lift** (`translateY(-2px)` + a stronger shadow) on these cards specifically. §4.4 explicitly froze "no scale or translate hover effects anywhere" as a considered rule, not an oversight, precisely to keep the product's motion language calm and flat. This card family gets a deliberate, narrow exception to that rule — a lift plus shadow strengthening on hover, `transition-[transform,box-shadow]`, no other property animated. §4.4's rule is unchanged everywhere else in the product; this is not a general reopening of the no-hover-motion discipline.
+| | Standard Cards (§23.2) | Overview Grid Pattern (this section) |
+|---|---|---|
+| Radius | `sm`–`md` (4–6px) | `rounded-none` — square corners are this pattern's own defining trait, not an overshoot of the standard scale |
+| Hover motion | none (§4.4's calm, flat motion language) | a subtle lift (`translateY(-2px)`) + strengthened shadow, `transition-[transform,box-shadow]` only |
+| Elevation | `shadow-soft` at rest | `shadow-soft` at rest, `shadow-soft-lg` on hover — both existing §4.3 tokens, no new shadow value |
+| Intended use | detail pages, forms, dashboard widgets — anywhere content is read or edited | dense grids of clickable navigation entries — System Settings today, plausibly Provider Registry / Integrations / AI Providers later, anywhere an "overview of areas to enter" is the page's whole job |
+
+§23.2 and §4.4 remain exactly as frozen for every other card and every other hover interaction in the product — this section adds a second, named pattern for a specific surface shape, rather than carving a hole in the first one. Any future page reaching for square corners or a hover lift should ask whether it is genuinely an overview/navigation grid (and therefore this pattern) or a detail/content surface (and therefore standard Cards) — the two are deliberately kept visually distinct so a user can tell which kind of page they're on at a glance.
 
 A fourth status value, **`Disabled`** (a muted badge, matching the existing `Badge` `muted` variant — no new color introduced), was added to `SettingCategoryStatus` for a capability that exists in the taxonomy but isn't reachable yet — the card renders non-interactive (`disabled`, reduced opacity, `cursor-not-allowed`) rather than clickable-but-pointless.
 
