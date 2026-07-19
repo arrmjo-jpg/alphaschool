@@ -814,3 +814,13 @@ The application must never sit in an invalid Branch/Academic Year pairing. If a 
 ### 24.8 Status
 
 This section is a frozen **design decision**, not yet implemented in code — no Global Context control, store, or write-boundary guard exists in `admin/` as of this freeze. It is ready to be picked up as its own implementation slice, sequenced at the point the product owner chooses (not necessarily inside Phase B's remaining closeout). Phase B (App Shell: Sidebar, Topbar, Breadcrumb, Notification Center, Search, Command Palette, and their 2026-07-19 icon/radius revision, §23) is considered complete as implemented; Global Context Model is a separately-tracked, frozen-but-unbuilt addition, not a blocker on Phase C.
+
+### 24.9 Scope Boundary — Global Context Is Not an Authorization Mechanism
+
+Global Context defines the application's default **working** context only — what a user sees by default and what a new record targets by default. It is a UX convenience layer, never a security boundary, and it does not substitute for, weaken, or bypass any authorization rule, business rule, or approval workflow defined elsewhere in this architecture:
+
+- Selecting a Branch in the Context Panel does not grant access to that Branch. Whatever branch-scoped role/permission check governs that Branch still applies in full, entirely independent of what's currently selected as Working Context.
+- Selecting a non-active Academic Year does not, by itself, grant `modify-historical-records` (§24.5). That permission, its risk-tiered confirmation, and Approval Engine routing apply exactly as specified regardless of the currently-selected Working Year — Global Context supplies a mutation's *default target*, never a reason to skip evaluating whether that mutation is allowed.
+- Every mutation, whatever Global Context it inherits its default scope/year from, remains subject to the same permission checks, validation, and approval workflows any other write in the system already goes through. Global Context changes what a form is pre-filled with; it changes nothing about whether submitting that form succeeds.
+
+This clause exists specifically to foreclose a plausible but wrong implementation shortcut: treating "currently selected Branch/Year" as equivalent to "authorized for that Branch/Year." They are two independent systems that happen to share one UI surface — the Context Panel supplies defaults, the permission/approval system decides what's actually allowed — and must never be conflated into one.
