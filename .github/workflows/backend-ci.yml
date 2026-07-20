@@ -58,6 +58,18 @@ jobs:
             \$env = preg_replace('/^DB_DATABASE=.*/m', 'DB_DATABASE=alphaschool_ci', \$env);
             \$env = preg_replace('/^DB_USERNAME=.*/m', 'DB_USERNAME=root', \$env);
             \$env = preg_replace('/^DB_PASSWORD=.*/m', 'DB_PASSWORD=', \$env);
+            // .env.example's defaults are Docker-native (docs/developer/docker-development.md)
+            // -- REDIS_HOST=redis and MAIL_HOST=mailpit are Compose service names that
+            // don't exist on this runner, and there's no redis/mailpit service defined
+            // above. Pest itself never sees these (phpunit.xml forces CACHE_STORE=array,
+            // SESSION_DRIVER=array, QUEUE_CONNECTION=sync for the testing env), but
+            // Larastan boots the full app outside that override to reflect facades/models,
+            // so these still need to be CI-safe to avoid depending on luck that nothing
+            // during boot ever touches Redis.
+            \$env = preg_replace('/^CACHE_STORE=.*/m', 'CACHE_STORE=array', \$env);
+            \$env = preg_replace('/^SESSION_DRIVER=.*/m', 'SESSION_DRIVER=array', \$env);
+            \$env = preg_replace('/^QUEUE_CONNECTION=.*/m', 'QUEUE_CONNECTION=sync', \$env);
+            \$env = preg_replace('/^MAIL_MAILER=.*/m', 'MAIL_MAILER=array', \$env);
             file_put_contents('.env', \$env);
           "
 
