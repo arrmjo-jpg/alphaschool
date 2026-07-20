@@ -208,6 +208,8 @@ Old Admin's tokens (light mode), HSL, from `src/styles/globals.css`:
 
 Status colors used inline (not tokenized) in Old Admin: `emerald-500/600` (success/ok), `amber-500/600` (warning), `sky`/`violet`/`rose` (dashboard KPI accent tones). **Recommendation**: promote `success`/`warning` to real semantic tokens (`--success`, `--warning`) alongside the existing `--destructive`, rather than leaving them as ad hoc Tailwind palette classes scattered through component code — this is the one place Old Admin's own token discipline fell short and New Admin should not repeat.
 
+**Amendment (2026-07-20): light-mode `--border`/`--input` contrast increased.** The value adopted at Phase A (`214 24% 91%`, the Old Admin light-mode value from the table above, carried through unchanged) sat only ~8-9 lightness points below `--card`/`--background` (100%/99%), subtle enough to blend into the surface on some displays — cards, inputs, tables, and section dividers all lost visible definition. Changed to `214 20% 84%` in `admin/src/index.css` — darkened and very slightly desaturated so it reads as a calm neutral line rather than a colored one as it becomes more visible, still inside the same hue family, still a token-level change (every surface using `--border`/`--input` picks it up automatically, no component override). Dark mode's `--border`/`--input` (`215 13% 38%`) is untouched — it was never the complaint. Verified live: computed-style check confirms the new value in light mode and the original byte-for-byte in dark mode, zero console errors.
+
 ### 4.2 Typography
 
 - **Fact**: Old Admin's font stack is `Tajawal` (weights 400/500/700) for the default/Arabic path and `Inter` (400/500/600/700) for `html[lang='en']`, loaded via a single Google Fonts `@import`, with a fallback chain to `system-ui, sans-serif`.
@@ -971,3 +973,84 @@ A same-day amendment to §26.15, superseding its grid-column count — the card 
 A fourth status value, **`Disabled`** (a muted badge, matching the existing `Badge` `muted` variant — no new color introduced), was added to `SettingCategoryStatus` for a capability that exists in the taxonomy but isn't reachable yet — the card renders non-interactive (`disabled`, reduced opacity, `cursor-not-allowed`) rather than clickable-but-pointless.
 
 Colors and shadow reuse existing tokens verbatim — no new color or shadow value was introduced. Dark-mode `--background`/`--card` already produce the requested "dark charcoal, cards slightly lighter" relationship; `shadow-soft`/`shadow-soft-lg` (§4.3) already produce a soft, non-glowing shadow, reused directly rather than hand-rolling a new one-off value.
+
+## 27. Provider Registry — the second Administration child
+
+Reached through a dedicated design review against the real Phase 2 backend (`ProviderManager`, `ProviderCredentialVault`, `HealthCheckRunner`, `ProviderRegistry::sync()`), not assumed to be a copy of §26 — Provider Registry's actual shape differs from Configuration Platform's in three ways significant enough to change the design, not just the data source.
+
+### 27.1 Purpose and Scope
+
+The second implemented child of §8.3's nine-child Administration group (`Configuration Platform` ✅ → `Provider Registry` → …), reusing every proven mechanism from §26 (Overview Grid, `WorkspaceHeader`, `StickyActionBar`, the permission model's view/edit asymmetry, real-data-only philosophy, Docker environment) rather than re-deriving them — the explicit reason this child was sequenced immediately after Configuration Platform and before any new business-domain workspace.
+
+### 27.2 The Three Real Differences From Configuration Platform
+
+1. **Credential values are never exposed, in either direction.** `ProviderCredential.credentials` is `$hidden`; Phase 2's own negative-case proofs verify a secret never appears in any model array/JSON representation. Configuration's field renderer shows a resolved *value*; Provider Registry's can only ever show whether a credential is *configured* — write-only inputs, never pre-filled with a previous value, not even masked dots standing in for a real one (there is no real one to fetch).
+2. **No per-slot view permission exists.** `ProviderSlotDefinition` declares only `requiredPermissionToEdit` — unlike `SettingDefinition`'s mandatory view/edit pair (ADR-0018 Decision 9). Resolved explicitly (§27.6), not left implicit: since a slot's *metadata* (name, owning module, health status) carries no real risk on its own — the only sensitive thing, credential values, is never returned regardless of who's asking — visibility is gated by ordinary Administration access, not a per-slot permission that doesn't exist in the schema to check.
+3. **Flatter granularity.** A Configuration category holds several independently-editable fields, justifying the rail-then-detail two-pane shape (§26.3). A provider slot is one atomic, all-or-nothing credential set — `ProviderCredentialVault::write()`'s `assertCredentialShape()` requires the exact declared field set on every write, no partial saves. There is nothing to browse *within* a slot, so a rail adds a click with no destination behind it.
+
+### 27.3 Navigation Model
+
+**Overview Grid → direct credential form, no intermediate rail.** The Overview Grid (§26.16) is reused exactly as-is as the landing page — each card represents one provider slot (e.g. "Email — SMTP", "Push Notifications — Firebase"). Clicking a card opens that slot's credential form directly, skipping the category-rail step §26.3 uses for Configuration Platform, since there is no second level of hierarchy to browse. Breadcrumb: Home → Administration → Provider Registry → [Slot], via the same multi-level `Breadcrumb` component, one level shallower than Configuration Platform's because the rail level doesn't exist here.
+
+In shorthand: `Configuration Platform = Overview Grid → Category → Settings Form`, `Provider Registry = Overview Grid → Provider Form` — the underlying design system (tokens, primitives, permission model, Docker environment) stays identical; each workspace's navigation depth matches its own actual data shape rather than forcing a shared template deeper or shallower than the domain warrants.
+
+### 27.4 Data Model Exposed
+
+Per slot: `slotKey`, a display name (`labelKey`, mirroring §26.2's naming decoupling — `slot_key` stays the fixed architectural identifier, the label is independently translatable), `owningModule`, `capabilityContract` (not shown to the end user — internal wiring only, and per §27.5's naming-branch rule, never used by the frontend to decide *anything* either), and the declared `credentialFields`.
+
+**Amendment (2026-07-20, pre-freeze review):** `credentialFields` is not a bare list of field names. Each entry declares its own type explicitly at the backend — `{ name: string, type: 'text' | 'password' | 'secret' }` — never inferred client-side from the field's name. A frontend heuristic keyed on names like `password`/`secret`/`key` is a list that only ever grows (`client_secret`, `private_token`, `signing_certificate`, …) and silently mis-renders the day a genuinely new field name doesn't match it; the backend already knows what each field is because it's the one declaring `credentialFields` in the first place, so it says so directly. This is a real contract change from the Phase 2 scaffold's plain `string[]` shape, landing in Phase F-B (§27.13) alongside the four existing Providers' declarations.
+
+`status` is derived from `HealthCheckRunner::check()`, with a fifth value added specifically for this workspace's overview: `healthy` → `Ready`, `unhealthy` → `Error`, no credential configured at any altitude → `Needs Setup`, `not_checkable` (a resolved Provider not implementing `HealthCheckable`) → `Disabled` (§26.16's fourth status value, already anticipated for exactly this case), and **`checking`** → *Checking…*, shown while the status fetch (initial load) or an explicit re-check is in flight. `checking` is deliberately a client-only transient state, never a value `HealthCheckRunner`'s synchronous v1 API itself returns — it belongs to the same vocabulary as the other four purely so the Overview Grid's badge component has one enum to render from, not because the backend has a fifth real state. No chart, counter, or last-checked timestamp on the card itself, matching §26.15/§26.16's standing rule against turning an overview card into a stat.
+
+### 27.5 Page Templates
+
+The Overview Grid component is reused verbatim from Configuration Platform — zero changes, proving §26.16's own claim that the pattern generalizes to "plausibly Provider Registry... later." A new `ProviderCredentialForm` (structurally: `WorkspaceHeader` + card-sectioned form + `StickyActionBar` Save, the same shell §26.5 already established) replaces `SettingsCategoryDetail`/`SettingField` for this workspace — its field renderer is new, not reused, because its contract is fundamentally different (no `value` prop exists to pass it). Each declared credential field renders using the `type` the backend declared for it (§27.4) — `text` as a plain input, `password`/`secret` as a masked input — never a name-based guess. All render empty regardless of type, with a placeholder reading "configured" or "not set" rather than a real value.
+
+**Two rules added during pre-freeze review (2026-07-20), both binding on Phase F-A/F-B:**
+
+- **The UI never branches on `capabilityContract` or on any vendor/slot identity.** No `if (slotKey === 'notifications.email.smtp')`, no switch on `capabilityContract`, anywhere in this workspace's frontend code — every rendering decision (which fields, what type each one is, what status badge to show) comes from the API response's declared metadata, exactly mirroring `ProviderManager`'s own backend discipline ("No vendor name ever appears in a switch/match/if-chain here or anywhere else in this class"). This is what keeps adding a fifth, sixth, tenth provider a pure registration act instead of a growing pile of frontend conditionals.
+- **Test Connection never persists.** The flow is Edit → Test → (result shown inline) → Save, never Edit → Save → Test. The "Test Connection" affordance (§27.7) sends the form's *currently-typed, unsaved* field values to a dedicated test endpoint and shows the result without writing anything to the Vault — a manager can try a value, see it fail, and correct it before ever committing a bad credential. This requires a backend-side capability beyond today's `HealthCheckable::healthCheck()` (which only ever reads the already-persisted credential via the Vault); see §27.13 for the new contract this needs.
+
+Save submits every declared field at once (never a per-field PATCH, matching the Vault's all-or-nothing write contract) and requires the current `expectedVersion` exactly as Configuration's optimistic-locking contract already does.
+
+### 27.6 Permission Model
+
+**Resolves §27.2's second difference explicitly.** Viewing the Overview Grid and any provider slot's card/metadata requires no per-slot permission — visible to anyone with general Administration access (mirroring `WorkspaceAccessResolver`'s existing coarse nav-gating philosophy, §26.6's own precedent). Editing a slot's credentials requires exactly the permission declared on that slot's `ProviderSlotDefinition.requiredPermissionToEdit` (e.g. `notifications.manage-email-provider`) — checked by `ProviderCredentialVault::assertCanEdit()`, unmodified, the same "the write endpoint is the real gate, the UI flag is just an accurate preview of it" discipline §26.6 established for Configuration, including the identical `is_super_admin` asymmetry: the view-level bypass (Overview Grid, card visibility) applies to Super Admin per the "general Administration access" rule above, but the edit-level check does not bypass — `canEdit` never promises more than a subsequent write would actually allow.
+
+### 27.7 Configuration Philosophy
+
+Same standing rule as §26.7: real resolved state or an explicit not-connected state, never a plausible-looking mock. A slot with no credential configured at any altitude shows `Needs Setup` as a genuine, correct state — not an error, not hidden. Health-check results are read directly from `HealthCheckRunner`'s existing 60-second cache; the Overview Grid displays whatever that cache currently holds (showing `Checking…`, §27.4, while that initial fetch is in flight) rather than forcing a live check on every page load. The credential form's "Test Connection" affordance is a genuinely different operation from the Overview Grid's cached badge — it tests the *unsaved, currently-typed* values (§27.5's Edit→Test→Save rule), never the persisted credential, and never writes anything regardless of the result — the one interaction this workspace has that Configuration Platform's design didn't need.
+
+### 27.8 Reusable Layout Patterns
+
+The Overview Grid Pattern (§26.16) gains its second real consumer here, confirming it as a genuine cross-workspace pattern rather than a one-off. `WorkspaceHeader`, `StickyActionBar`, `Breadcrumb`, and the risk-tiered approval-confirmation taxonomy (reused for `approval_required` slots exactly as Configuration Platform reuses it) all carry over unchanged.
+
+### 27.9 Empty States
+
+Three conditions, mirroring §26.9's taxonomy one level flatter (no per-category empty state exists here since there's no rail): zero provider slots registered system-wide (System Initialization, unlikely in practice since four slots are already registered, but the shell must still render correctly at zero per the Registration Principle, §27.12); a slot with `Needs Setup` status (a real, non-error state, per §27.7); no Administration access at all (workspace absent from the Sidebar entirely, per `WorkspaceAccessResolver`).
+
+### 27.10 Responsive Behavior
+
+Identical to §26.10/§26.16 — the Overview Grid's 6/4/2/1-column breakpoints are reused verbatim. The credential form (replacing the two-pane rail+detail on mobile) is a single-column form at every breakpoint, since there was never a rail to collapse.
+
+### 27.11 Accessibility
+
+Same conventions as §26.11 — `StickyActionBar`'s Save button keeps a deliberate tab order; write-only credential inputs get real `autocomplete="new-password"`-style hints where the field name implies a secret, so password managers don't attempt to fill them with an unrelated stored credential.
+
+### 27.12 Registration Principle
+
+Unchanged from §26.12, applied to this child specifically: Provider Registry registers into the same `WorkspaceDefinition` registry as every other workspace, under the same Administration `group`. The Administration shell's own "correct with zero, one, or all nine children" guarantee is what makes adding this second child a pure registration act, not a shell change.
+
+### 27.13 Implementation Plan
+
+Mirrors §26.13's own two-phase split, for the identical reason it existed there: the backend (`ProviderManager`/`ProviderCredentialVault`/`HealthCheckRunner`) already exists and is tested, so most of the capability is already there — but pre-freeze review (§27.4/§27.5) surfaced two real, narrow backend contract changes that Phase F-B must make, unlike Configuration Platform's Phase E-B, which needed none:
+
+1. **`ProviderSlotDefinition.credentialFields` gains a type per field.** Today it's `string[]` (Phase 2 scaffold). Becomes an array of `{ name: string, type: 'text' | 'password' | 'secret' }`. Touches: the VO itself, `ProviderRegistry::sync()`'s validation (`assertCredentialFieldsDeclared`), `ProviderCredentialVault::assertCredentialShape()` (extracts names from the richer shape), `ProviderRegistration.credential_fields`'s stored JSON shape (no migration needed, still an `array` cast), and all four existing Providers' `providerSlots()` declarations (`SmtpEmailProvider`, `GoogleOAuthProvider`, `FirebasePushProvider`, `R2StorageProvider`) — each field gets its real type assigned once, by the module that actually knows what it is.
+2. **A new contract for testing unsaved credentials.** `HealthCheckable::healthCheck()` only ever reads the already-persisted credential via the Vault — it has no way to test a value the form-filler hasn't saved yet. A new sibling interface (e.g. `TestsCredentials` with `testCredentials(array $credentials): bool`) lets a Provider validate a given, in-memory credential set without touching the Vault at all, satisfying §27.5's Edit→Test→Save rule. Optional, exactly like `HealthCheckable` itself — a Provider with no meaningful pre-save test simply doesn't implement it, and the form's Test Connection button is absent rather than fake.
+
+- **Phase F-A (frontend infrastructure)**: the Overview Grid reused as-is against a temporary fixture provider (fixture slots exercising `Ready`/`Needs Setup`/`Error`/`Disabled`/`Checking…`, with fixture `credentialFields` already carrying real `type` values so the field renderer is built against the real contract from day one, not retrofitted in F-B), `ProviderCredentialForm`'s type-driven field renderer, the Test Connection flow (against the fixture, since the real `TestsCredentials` contract lands in F-B), permission-aware rendering per §27.6, responsive/accessibility verification — the same fixture-then-revert discipline as every prior phase.
+- **Phase F-B (Provider Registry integration)**: the two backend contract changes above, a thin adapter-layer REST API exposing `ProviderManager`/`ProviderCredentialVault`/`HealthCheckRunner`/the new test-credentials path (no unrelated business-logic changes, mirroring §26.13's own API stability principle), `@alphaschool/contracts` gains a `providers` feature folder alongside its existing `settings` one, and the real four already-registered slots become the real, non-fixture proof data.
+
+### 27.14 Status
+
+Frozen design (2026-07-20), revised once during pre-freeze review the same day: explicit backend-declared field types replacing a name-based heuristic (§27.4/§27.5), Test Connection's never-persists / Edit→Test→Save sequencing (§27.5/§27.7), a client-only `Checking…` transient status (§27.4), and a binding rule against the UI ever branching on capability contracts or vendor identity (§27.5). All four incorporated before this freeze, not deferred. Implementation (Phase F-A) begins next.

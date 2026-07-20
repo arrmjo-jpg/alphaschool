@@ -120,8 +120,16 @@
   --success-foreground: hsl(0 0% 100%);
   --warning: hsl(38 92% 45%);
   --warning-foreground: hsl(0 0% 100%);
-  --border: hsl(214 24% 91%);
-  --input: hsl(214 24% 91%);
+  /* Light-mode border/input contrast (2026-07-20 refinement,
+     docs/ADMIN_DESIGN_SYSTEM.md §4.1): the original 214 24% 91% sat
+     only ~8-9 lightness points below --card/--background (100%/99%),
+     subtle enough to blend into the surface on some displays. Darkened
+     to 84% and desaturated slightly (20%) so it reads as a calm neutral
+     line rather than a colored one as it gets more visible -- still a
+     token-level change, not a component override, and dark mode's
+     --border/--input are untouched. */
+  --border: hsl(214 20% 84%);
+  --input: hsl(214 20% 84%);
   --ring: hsl(202 44% 41%);
 }
 
