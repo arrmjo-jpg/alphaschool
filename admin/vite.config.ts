@@ -16,6 +16,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Docker development environment (docs/developer/docker-development.md):
+    // binds all interfaces, not just localhost, so the container's
+    // published port is actually reachable from the host browser. Harmless
+    // outside Docker too -- Vite still prints the local URL to use.
+    host: true,
   },
   // Build-time-injected app version (docs/ADMIN_DESIGN_SYSTEM.md §20.6:
   // "never hand-maintained") -- Footer/Login Experience read this

@@ -4,18 +4,22 @@ This is the "how do I, as a developer, do X" reference — distinct from `docs/D
 
 ## Local setup
 
+Everything runs in Docker — no local PHP, MySQL, Redis, or Node installation. See `docs/developer/docker-development.md` for the full bootstrap sequence and service list; the short version:
+
 ```bash
-cd backend
-composer install
-cp .env.example .env   # if not already present
-php artisan key:generate
+docker compose up -d --build
+docker compose exec app composer install
+docker compose exec app cp .env.example .env
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate
+docker compose exec vite npm install
 ```
 
-Backend requires a reachable MySQL/MariaDB instance matching `.env`'s `DB_*` settings — several tools below (notably Larastan) boot the full Laravel application, which needs the database to be reachable even for static analysis, not just for running the app.
+Every command below that reads `vendor/bin/...` or `php artisan ...` runs the same way, just prefixed with `docker compose exec app` — e.g. `docker compose exec app vendor/bin/pint --test`. Several tools (notably Larastan) boot the full Laravel application, which needs the database reachable even for static analysis, not just for running the app — this is automatic inside the `app` container since `mysql` is a real, always-on service on the same Docker network.
 
 ## Running the quality gates locally
 
-Run all of these before opening a PR — they're the same commands CI runs.
+Run all of these before opening a PR — they're the same commands CI runs. All of them run inside the `app` container (`docker compose exec app <command>`).
 
 | Tool | Command | What it checks |
 |---|---|---|
