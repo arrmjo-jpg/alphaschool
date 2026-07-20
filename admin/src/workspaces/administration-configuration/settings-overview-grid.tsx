@@ -57,7 +57,7 @@ export function SettingsOverviewGrid({
             )}
           >
             <Icon className={ICON_SIZE.prominent} aria-hidden="true" />
-            <span className="text-sm font-medium">{t(category.labelKey, category.labelKey)}</span>
+            <span className="text-sm font-medium">{t(category.labelKey, category.key)}</span>
             <Badge variant={STATUS_VARIANT[category.status]}>{t(`status.${category.status}`)}</Badge>
             {category.secondaryLine && <span className="text-xs text-muted-foreground">{category.secondaryLine}</span>}
           </button>

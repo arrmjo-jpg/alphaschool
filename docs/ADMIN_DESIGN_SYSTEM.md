@@ -896,7 +896,7 @@ Two-pane: a search-augmented category rail (left) + the selected category's form
 
 ### 26.4 Settings Hierarchy
 
-Global→Branch→User altitude chain from `SettingsResolver`. A Branch-scoped field's edit view honors the currently-selected Branch from Global Context (§24) — explicit coherence between the two systems, never a bypass (§24.9 applies in full). Each field shows which altitude it is *currently resolving from* (Global default / Branch override / User preference) once the resolver's trace is reachable (§26.13).
+Default→Global→Branch altitude chain from `SettingsResolver` — confirmed against `ConfigurationScopeContext`'s own docblock during Phase E-B implementation to have no "User" altitude at all; User Preferences are a deliberately separate, lower-ceremony mechanism outside this resolver, not a fourth rung on this chain. A Branch-scoped field's edit view honors the currently-selected Branch from Global Context (§24) — explicit coherence between the two systems, never a bypass (§24.9 applies in full). Each field shows which altitude it is *currently resolving from* ("Using the global default" / "Set globally" / "Set for this branch") via the resolver's real `resolvedFrom` trace (shipped in §26.13's Phase E-B).
 
 ### 26.5 Page Templates
 
@@ -904,7 +904,7 @@ Global→Branch→User altitude chain from `SettingsResolver`. A Branch-scoped f
 
 ### 26.6 Permission Model
 
-Real, seeded permission strings exist (`identity.view-otp-settings`/`identity.configure-otp-settings`, the view/edit split per ADR-0018 Decision 9) but are granted to no role by default today — only `is_super_admin`'s client-side bypass sees anything currently. View-but-not-edit renders disabled with an explanatory note, never hidden. A category with zero visible permitted settings does not appear in the rail at all (§8.4, extended one level deeper).
+Real, seeded permission strings exist (`identity.view-otp-settings`/`identity.configure-otp-settings`, the view/edit split per ADR-0018 Decision 9), enforced server-side by the real adapter API (§26.13's Phase E-B) — not a client-side bypass. View-gating bypasses for `is_super_admin`, matching `WorkspaceAccessResolver`'s coarse nav-gating philosophy; edit-gating deliberately does **not** bypass for `is_super_admin` in either the `canEdit` flag or the write endpoint itself, both deferring entirely to `SettingsResolver::assertCanEdit()`'s existing, unmodified behavior — so `canEdit: true` never promises more than a subsequent write would actually allow. View-but-not-edit renders disabled with an explanatory note, never hidden. A category with zero visible permitted settings does not appear in the rail at all (§8.4, extended one level deeper).
 
 ### 26.7 Configuration Philosophy
 
@@ -937,9 +937,11 @@ Administration's children are discovered **exclusively** through the existing `W
 
 **API stability principle.** Once E-B ships it, the REST API surface becomes the stable public contract between frontend and backend — its shape (request/response structure, field names, error format) is what the frontend depends on and must not change without a deliberate, versioned decision. The internal PHP services behind it (`SettingsResolver`, `ConfigurationRegistry`, `ProviderManager`) remain free to evolve, refactor, or be reimplemented entirely, as long as the contract they serve stays stable — the adapter/controller layer is the boundary that insulates the frontend from internal implementation churn, never a pass-through that couples the two.
 
+**Phase E-B shipped (2026-07-20).** `ConfigurationController` (`GET /api/v1/administration/configuration/categories`, `GET .../categories/{key}/settings`, `PATCH .../categories/{key}/settings/{fieldKey}`) is a thin adapter over `SettingsResolver`/`ConfigurationRegistry` verbatim, per this section's own principle — no business-logic changes. The contract is defined once, in `@alphaschool/contracts` (ADR-0023), and consumed by both `real-configuration-provider.ts` and the Pest Feature test suite. `/api/v1/workspaces` (§26.6/ADR-0018) was also wired to real permission-based visibility in this same phase — `WorkspaceAccessResolver` previously returned `[]` unconditionally, which would have made this workspace unreachable regardless of E-B's own work.
+
 ### 26.14 Status
 
-Frozen design. Phase E-A implementation begins next; Phase E-B is a separately-scoped, later task.
+Frozen design. Phase E-A and Phase E-B are both shipped and verified — real backend, real Pest Feature tests, real browser E2E check (login → Overview Grid → category detail, real OTP field values, correct `resolvedFrom`/`canEdit` states, RTL and dark mode, no console errors). Configuration Platform's `ConfigurationDataProvider` is genuinely connected, not a fixture; §26.7/§26.9's "not connected" state remains correct only for a deployment that never registers this workspace's provider. Remaining Administration children (eight of nine) are still unregistered, per §26.12.
 
 ### 26.15 Overview Grid Refinement (2026-07-19)
 

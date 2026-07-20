@@ -21,14 +21,14 @@ export function SettingField({
   onChange: (value: unknown) => void
 }) {
   const { t } = useTranslation('administration-configuration')
-  const label = t(field.labelKey, field.labelKey)
+  const label = t(field.labelKey, field.key)
 
   const resolvedFromNote =
-    field.resolvedFrom === 'global'
-      ? t('detail.usingGlobalDefault')
-      : field.resolvedFrom === 'branch'
-        ? t('detail.resolvedFromBranch')
-        : t('detail.resolvedFromUser')
+    field.resolvedFrom === 'branch'
+      ? t('detail.resolvedFromBranch')
+      : field.resolvedFrom === 'global'
+        ? t('detail.resolvedFromGlobal')
+        : t('detail.usingGlobalDefault')
 
   return (
     <div className="flex flex-col gap-1.5">

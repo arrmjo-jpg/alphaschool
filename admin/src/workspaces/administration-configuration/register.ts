@@ -1,6 +1,8 @@
 import { Settings, SlidersHorizontal } from 'lucide-react'
 import { registerWorkspace } from '@/workspaces/registry'
 import { registerWorkspaceTranslations } from '@/platform/i18n'
+import { setConfigurationDataProvider } from '@/platform/administration/configuration-provider'
+import { realConfigurationDataProvider } from '@/workspaces/administration-configuration/real-configuration-provider'
 import en from '@/workspaces/administration-configuration/locales/en.json'
 import ar from '@/workspaces/administration-configuration/locales/ar.json'
 
@@ -21,6 +23,14 @@ import ar from '@/workspaces/administration-configuration/locales/ar.json'
 export function registerConfigurationPlatformWorkspace(): void {
   registerWorkspaceTranslations('administration-configuration', 'en', en)
   registerWorkspaceTranslations('administration-configuration', 'ar', ar)
+
+  // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- the real adapter
+  // API now exists, so this workspace registers a real provider
+  // permanently, not a temporary verification fixture. §26.7's "not
+  // connected" state remains correct behavior for any deployment where
+  // this call never runs (e.g. a build that hasn't registered the
+  // workspace at all), it just no longer describes this one.
+  setConfigurationDataProvider(realConfigurationDataProvider)
 
   registerWorkspace({
     key: 'configuration-platform',

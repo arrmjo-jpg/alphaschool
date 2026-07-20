@@ -34,7 +34,7 @@ export function SettingsCategoryList({
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
           )}
         >
-          {t(category.labelKey, category.labelKey)}
+          {t(category.labelKey, category.key)}
         </button>
       ))}
     </nav>

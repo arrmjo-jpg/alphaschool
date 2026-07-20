@@ -6,8 +6,8 @@
   "categories.notConnected.title": "Configuration Platform isn't connected yet",
   "categories.notConnected.body": "This workspace's real settings data will appear here once the backend integration ships.",
   "detail.usingGlobalDefault": "Using the global default",
+  "detail.resolvedFromGlobal": "Set globally",
   "detail.resolvedFromBranch": "Set for this branch",
-  "detail.resolvedFromUser": "Your personal preference",
   "detail.viewOnlyNote": "You can view this setting but don't have permission to change it.",
   "detail.approvalRequiredNote": "Changing this setting requires approval.",
   "detail.save": "Save changes",
@@ -16,5 +16,8 @@
   "status.ready": "Ready",
   "status.needs-setup": "Needs Setup",
   "status.error": "Error",
-  "status.disabled": "Not Available"
+  "status.disabled": "Not Available",
+  "category.access-governance": "Access Governance",
+  "field.identity.otp.code_length": "OTP Code Length",
+  "field.identity.otp.lifetime_minutes": "OTP Challenge Lifetime (minutes)"
 }

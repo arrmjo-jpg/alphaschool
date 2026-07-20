@@ -1,0 +1,8 @@
+{
+  "name": "alphaschool-erp",
+  "private": true,
+  "workspaces": [
+    "admin",
+    "packages/*"
+  ]
+}

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Administration\Http\Controllers\ConfigurationController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Identity\Http\Controllers\MeController;
 use App\Modules\Identity\Http\Controllers\WorkspaceController;
@@ -33,6 +34,21 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [MeController::class, 'show'])->name('me');
         Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    });
+
+    // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- a thin adapter
+    // over SettingsResolver/ConfigurationDefinition, no new business
+    // logic. View-gating is coarse (bypasses for is_super_admin,
+    // matching WorkspaceAccessResolver above); the write endpoint
+    // defers entirely to SettingsResolver::write()'s own strict,
+    // unmodified permission check -- see ConfigurationController's own
+    // docblock for why the two are deliberately not the same bypass.
+    Route::middleware('auth:sanctum')->prefix('administration/configuration')->name('administration.configuration.')->group(function () {
+        Route::get('/categories', [ConfigurationController::class, 'categories'])->name('categories');
+        Route::get('/categories/{capability}/settings', [ConfigurationController::class, 'categorySettings'])->name('categories.settings');
+        Route::patch('/categories/{capability}/settings/{key}', [ConfigurationController::class, 'writeSetting'])
+            ->where('key', '.*')
+            ->name('categories.settings.write');
     });
 
     // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge

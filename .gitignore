@@ -45,11 +45,17 @@ backend/Homestead.yaml
 backend/phpstan-baseline.neon.bak
 backend/.deptrac.cache
 
+# ---- root (npm workspaces) ----
+node_modules/
+
 # ---- admin (React + Vite, not yet scaffolded) ----
 admin/node_modules/
 admin/dist/
 admin/.env
 admin/.env.local
+
+# ---- packages (npm workspaces) ----
+packages/*/node_modules/
 
 # ---- frontend (Next.js, not yet scaffolded) ----
 frontend/node_modules/

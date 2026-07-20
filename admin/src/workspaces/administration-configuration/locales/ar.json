@@ -6,8 +6,8 @@
   "categories.notConnected.title": "منصة الإعدادات غير متصلة بعد",
   "categories.notConnected.body": "ستظهر بيانات الإعدادات الحقيقية لهذه المساحة بمجرد تفعيل الربط مع الخادم.",
   "detail.usingGlobalDefault": "يستخدم القيمة الافتراضية العامة",
+  "detail.resolvedFromGlobal": "مُحدَّد عالميًا",
   "detail.resolvedFromBranch": "مُحدَّد لهذا الفرع",
-  "detail.resolvedFromUser": "تفضيلك الشخصي",
   "detail.viewOnlyNote": "يمكنك عرض هذا الإعداد لكن لا تملك صلاحية تعديله.",
   "detail.approvalRequiredNote": "تغيير هذا الإعداد يتطلب موافقة.",
   "detail.save": "حفظ التغييرات",
@@ -16,5 +16,8 @@
   "status.ready": "جاهز",
   "status.needs-setup": "يحتاج إعداد",
   "status.error": "خطأ",
-  "status.disabled": "غير متاحة"
+  "status.disabled": "غير متاحة",
+  "category.access-governance": "الحوكمة والصلاحيات",
+  "field.identity.otp.code_length": "طول رمز التحقق",
+  "field.identity.otp.lifetime_minutes": "مدة صلاحية رمز التحقق (بالدقائق)"
 }
