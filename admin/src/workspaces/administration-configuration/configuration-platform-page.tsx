@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, PlugZap, Inbox } from 'lucide-react'
 import { getConfigurationDataProvider } from '@/platform/administration/configuration-provider'
-import { SettingsOverviewGrid } from '@/workspaces/administration-configuration/settings-overview-grid'
+import { OverviewGrid } from '@/platform/administration/overview-grid'
 import { SettingsCategoryList } from '@/workspaces/administration-configuration/settings-category-list'
 import { SettingsCategoryDetail } from '@/workspaces/administration-configuration/settings-category-detail'
 import { WorkspaceHeader } from '@/platform/shell/workspace-header'
@@ -51,7 +51,7 @@ export default function ConfigurationPlatformPage() {
           <p className="max-w-sm text-sm text-muted-foreground">{t('categories.empty.body')}</p>
         </div>
       ) : selectedCategory === null ? (
-        <SettingsOverviewGrid categories={categories!} onSelect={setSelectedCategory} />
+        <OverviewGrid items={categories!} onSelect={setSelectedCategory} translationNamespace="administration-configuration" />
       ) : (
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="hidden lg:block lg:w-56 lg:shrink-0">

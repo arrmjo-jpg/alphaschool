@@ -1,0 +1,23 @@
+{
+  "workspace.label": "Provider Registry",
+  "workspace.group.label": "Administration",
+  "slots.empty.title": "No provider slots yet",
+  "slots.empty.body": "Provider slots will appear here once modules register them.",
+  "slots.notConnected.title": "Provider Registry isn't connected yet",
+  "slots.notConnected.body": "This workspace's real provider data will appear here once the backend integration ships.",
+  "form.configured": "Configured",
+  "form.notSet": "Not set",
+  "form.viewOnlyNote": "You can view this provider but don't have permission to change its credentials.",
+  "form.testConnection": "Test Connection",
+  "form.testing": "Testing…",
+  "form.testOk": "Connection successful",
+  "form.testFailed": "Connection failed",
+  "form.save": "Save changes",
+  "form.cancel": "Cancel",
+  "form.saving": "Saving…",
+  "status.ready": "Ready",
+  "status.needs-setup": "Needs Setup",
+  "status.error": "Error",
+  "status.disabled": "Not Available",
+  "status.checking": "Checking…"
+}

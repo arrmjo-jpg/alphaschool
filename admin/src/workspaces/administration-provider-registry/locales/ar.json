@@ -1,0 +1,23 @@
+{
+  "workspace.label": "سجل مزودي الخدمة",
+  "workspace.group.label": "الإدارة",
+  "slots.empty.title": "لا توجد فتحات مزودين بعد",
+  "slots.empty.body": "ستظهر فتحات المزودين هنا بمجرد أن تسجلها الوحدات.",
+  "slots.notConnected.title": "سجل مزودي الخدمة غير متصل بعد",
+  "slots.notConnected.body": "ستظهر بيانات المزودين الحقيقية لهذه المساحة بمجرد تفعيل الربط مع الخادم.",
+  "form.configured": "مُهيَّأ",
+  "form.notSet": "غير محدد",
+  "form.viewOnlyNote": "يمكنك عرض هذا المزود لكن لا تملك صلاحية تعديل بيانات اعتماده.",
+  "form.testConnection": "اختبار الاتصال",
+  "form.testing": "جارٍ الاختبار…",
+  "form.testOk": "نجح الاتصال",
+  "form.testFailed": "فشل الاتصال",
+  "form.save": "حفظ التغييرات",
+  "form.cancel": "إلغاء",
+  "form.saving": "جارٍ الحفظ…",
+  "status.ready": "جاهز",
+  "status.needs-setup": "يحتاج إعداد",
+  "status.error": "خطأ",
+  "status.disabled": "غير متاحة",
+  "status.checking": "جارٍ الفحص…"
+}
