@@ -16,7 +16,10 @@ docker compose up -d --build
 docker compose exec app composer install
 docker compose exec app cp .env.example .env
 docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan storage:link
+docker compose exec app php artisan administration:sync-settings
+docker compose exec app php artisan administration:sync-providers
 docker compose run --rm vite npm install
 
 # vendor/ and node_modules are named volumes that started empty, so
@@ -27,7 +30,7 @@ docker compose run --rm vite npm install
 docker compose up -d queue scheduler vite
 ```
 
-That's the whole thing, verified end-to-end against a real clean run. After this:
+That's the whole thing, verified end-to-end against a real clean run. `migrate --seed` runs `database/seeders/DatabaseSeeder.php`, which creates a Super Admin (`testuser`/`test@example.com`), baseline roles/permissions, one Organization/School/Branch (the dedicated-instance model, ADR-0006, means exactly one of each), and lookup tables (reason codes, relationship types) -- but deliberately *not* Configuration/Provider Registry data, which lives in code, not seed rows; `administration:sync-settings`/`administration:sync-providers` populate those from every `DeclaresSettingsSchema`/`DeclaresProviderSlots` implementer instead (see `docs/ADMINISTRATION_PLATFORM.md`'s Registry Pattern). After this:
 
 | What | Where |
 |---|---|

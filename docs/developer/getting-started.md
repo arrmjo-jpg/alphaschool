@@ -11,7 +11,10 @@ docker compose up -d --build
 docker compose exec app composer install
 docker compose exec app cp .env.example .env
 docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan storage:link
+docker compose exec app php artisan administration:sync-settings
+docker compose exec app php artisan administration:sync-providers
 docker compose exec vite npm install
 ```
 
