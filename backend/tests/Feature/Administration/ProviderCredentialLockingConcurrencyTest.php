@@ -26,7 +26,7 @@ beforeEach(function () {
 
     $stmt = $this->pdo->prepare(
         'INSERT INTO provider_registrations (public_id, slot_key, capability_contract, provider_class, credential_fields, owning_module, required_permission_to_edit, deprecation_status, created_at, updated_at) '.
-        "VALUES (?, 'test.vault-concurrency-proof', 'test.category', 'Test\\\\FakeProvider', '[\"api_key\"]', 'Test', 'test.manage-provider', 'active', NOW(), NOW())"
+        "VALUES (?, 'test.vault-concurrency-proof', 'test.category', 'Test\\\\FakeProvider', '[{\"name\":\"api_key\",\"type\":\"text\"}]', 'Test', 'test.manage-provider', 'active', NOW(), NOW())"
     );
     $stmt->execute([$ulid()]);
 

@@ -47,6 +47,15 @@ class PermissionSeeder extends Seeder
             // single catch-all Administration group.
             'media' => ['sort_order' => 4, 'icon' => 'image', 'name' => ['en' => 'Media', 'ar' => 'الوسائط']],
             'notifications' => ['sort_order' => 5, 'icon' => 'bell', 'name' => ['en' => 'Notifications', 'ar' => 'الإشعارات']],
+            // Administration Workspace Phase F-B (docs/ADMIN_DESIGN_SYSTEM.md
+            // §27.6) -- deliberately the one exception to the "no
+            // catch-all Administration group" rule above, and not a
+            // contradiction of it: this group holds workspace-level
+            // *visibility* permissions only (e.g. "can see the Provider
+            // Registry nav item at all"), never a credential-edit grant --
+            // those stay exactly where they already are, under each
+            // owning module's own group.
+            'administration' => ['sort_order' => 6, 'icon' => 'layout-grid', 'name' => ['en' => 'Administration', 'ar' => 'الإدارة']],
         ];
 
         $groups = [];
@@ -114,6 +123,12 @@ class PermissionSeeder extends Seeder
             'media.manage-storage-provider' => ['group' => 'media', 'name' => ['en' => 'Manage Storage Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود التخزين']],
             'notifications.manage-email-provider' => ['group' => 'notifications', 'name' => ['en' => 'Manage Email Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود البريد الإلكتروني']],
             'notifications.manage-push-provider' => ['group' => 'notifications', 'name' => ['en' => 'Manage Push Provider Credentials', 'ar' => 'إدارة بيانات اعتماد مزود الإشعارات']],
+            // §27.6 pre-freeze review: gates the Provider Registry
+            // workspace's own visibility (WorkspaceAccessResolver), never
+            // a per-slot permission -- individual slots' metadata stays
+            // unconditionally visible to anyone who can see the workspace
+            // at all, per ProviderRegistryController's own docblock.
+            'administration.providers.view' => ['group' => 'administration', 'name' => ['en' => 'View Provider Registry', 'ar' => 'عرض سجل مزودي الخدمة']],
         ];
 
         $permissions = [];

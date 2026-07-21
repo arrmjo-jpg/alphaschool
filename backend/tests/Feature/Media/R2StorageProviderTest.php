@@ -71,5 +71,13 @@ it('resolves real R2 credentials through the Vault once written, and passes heal
 it('registers with a credential shape genuinely different from the other two proof providers', function () {
     $registration = ProviderRegistration::where('slot_key', 'media.storage.r2')->first();
 
-    expect($registration->credential_fields)->toBe(['key', 'secret', 'region', 'endpoint']);
+    // §27.4/§27.5's pre-freeze amendment: each field now carries its own
+    // declared type (key/secret are both 'secret', region/endpoint are
+    // 'text') alongside its name.
+    expect($registration->credential_fields)->toBe([
+        ['name' => 'key', 'type' => 'secret'],
+        ['name' => 'secret', 'type' => 'secret'],
+        ['name' => 'region', 'type' => 'text'],
+        ['name' => 'endpoint', 'type' => 'text'],
+    ]);
 });

@@ -3,6 +3,7 @@
 namespace App\Modules\Administration\Services;
 
 use App\Core\Contracts\DeclaresProviderSlots;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Models\ProviderRegistration;
 use InvalidArgumentException;
@@ -41,6 +42,7 @@ class ProviderRegistry
 
             foreach ($class::providerSlots() as $definition) {
                 $this->assertCredentialFieldsDeclared($definition);
+                $this->assertCredentialFieldTypesValid($definition);
                 $this->assertMandatoryPermission($definition);
                 $this->assertApprovalPermissionWhenRequired($definition);
                 $this->assertCapabilityContractSatisfied($class, $definition);
@@ -59,6 +61,30 @@ class ProviderRegistry
             throw new InvalidArgumentException(
                 "Provider slot '{$definition->slotKey}': credentialFields must declare at least one field -- a slot with no credential shape is not a vendor relationship the Vault has anything to store.",
             );
+        }
+    }
+
+    /**
+     * §27.4/§27.5 pre-freeze amendment: each field's `type` must be one
+     * of the frontend's known render types -- refused at registration
+     * time, never silently defaulted, matching this class's own
+     * standing discipline for every other guard here.
+     */
+    private function assertCredentialFieldTypesValid(ProviderSlotDefinition $definition): void
+    {
+        foreach ($definition->credentialFields as $field) {
+            if (! $field instanceof ProviderCredentialFieldDefinition) {
+                throw new InvalidArgumentException(
+                    "Provider slot '{$definition->slotKey}': credentialFields must be ProviderCredentialFieldDefinition instances, not bare strings -- each field declares its own type explicitly.",
+                );
+            }
+
+            if (! in_array($field->type, ProviderCredentialFieldDefinition::VALID_TYPES, true)) {
+                $validTypes = implode(', ', ProviderCredentialFieldDefinition::VALID_TYPES);
+                throw new InvalidArgumentException(
+                    "Provider slot '{$definition->slotKey}': credential field '{$field->name}' declares unknown type '{$field->type}' -- must be one of: {$validTypes}.",
+                );
+            }
         }
     }
 
@@ -110,7 +136,10 @@ class ProviderRegistry
             [
                 'capability_contract' => $definition->capabilityContract,
                 'provider_class' => $providerClass,
-                'credential_fields' => $definition->credentialFields,
+                'credential_fields' => array_map(
+                    fn (ProviderCredentialFieldDefinition $field) => ['name' => $field->name, 'type' => $field->type],
+                    $definition->credentialFields,
+                ),
                 'owning_module' => $definition->owningModule,
                 'required_permission_to_edit' => $definition->requiredPermissionToEdit,
                 'approval_required' => $definition->approvalRequired,

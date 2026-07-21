@@ -33,7 +33,7 @@ export function ProviderCredentialForm({ slotKey }: { slotKey: string }) {
   })
 
   const [pending, setPending] = useState<Record<string, string>>({})
-  const [testResult, setTestResult] = useState<{ ok: boolean; message?: string } | null>(null)
+  const [testResult, setTestResult] = useState<{ ok: boolean } | null>(null)
 
   const allFieldsFilled = (detail?.credentialFields ?? []).every((f) => (pending[f.name] ?? '').trim() !== '')
 
@@ -92,7 +92,12 @@ export function ProviderCredentialForm({ slotKey }: { slotKey: string }) {
 
       {!canEdit && <p className="text-xs text-muted-foreground">{t('form.viewOnlyNote')}</p>}
 
-      {canEdit && (
+      {/* canTest: the resolved Provider must actually implement
+          TestsCredentials (backend/app/Core/Contracts/TestsCredentials.php)
+          -- optional exactly like HealthCheckable, so a Provider with no
+          meaningful pre-save check gets no button at all, never one that
+          silently does nothing (§27.5's "never a fake control" rule). */}
+      {canEdit && detail?.canTest && (
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -105,7 +110,7 @@ export function ProviderCredentialForm({ slotKey }: { slotKey: string }) {
           </Button>
           {testResult && (
             <Badge variant={testResult.ok ? 'success' : 'destructive'}>
-              {testResult.ok ? t('form.testOk') : (testResult.message ?? t('form.testFailed'))}
+              {testResult.ok ? t('form.testOk') : t('form.testFailed')}
             </Badge>
           )}
         </div>

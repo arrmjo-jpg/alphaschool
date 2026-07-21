@@ -22,11 +22,18 @@ namespace App\Core\ValueObjects;
  * SettingDefinition's identical fields (ADR-0018 Decisions 9-10) here is
  * the smallest change that supplies them, not a reopening of Phase 1's
  * frozen decisions -- nothing in Phase 1 consumed this VO yet.
+ *
+ * $credentialFields changed from string[] to
+ * ProviderCredentialFieldDefinition[] during Administration Workspace
+ * Phase F-B (docs/ADMIN_DESIGN_SYSTEM.md §27.4/§27.5 pre-freeze
+ * amendment) -- each field now declares its own input type explicitly,
+ * closing a real gap the frontend would otherwise have filled with a
+ * name-based heuristic.
  */
 final class ProviderSlotDefinition
 {
     /**
-     * @param  string[]  $credentialFields  e.g. ["api_key", "api_secret", "region"] -- which fields the Vault encrypts, never the values themselves.
+     * @param  ProviderCredentialFieldDefinition[]  $credentialFields  Which fields the Vault encrypts, never the values themselves -- each carries its own declared type (text/password/secret), never inferred from its name.
      * @param  callable(): bool|null  $healthCheck  Synchronous in Phase 2's first implementation (ADR-0022's own delivery-principle note); async/scheduled is a later refinement. Optional -- a resolved Provider instance implementing App\Core\Contracts\HealthCheckable is the primary invocation path (it can be reflected on and persisted by slot_key; a raw closure cannot); this field exists for a slot whose health check is not naturally a method on the Provider itself.
      */
     public function __construct(

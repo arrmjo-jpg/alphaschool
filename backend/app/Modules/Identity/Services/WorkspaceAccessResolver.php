@@ -38,6 +38,19 @@ class WorkspaceAccessResolver
             $workspaces[] = ['key' => 'configuration-platform', 'required_permission' => 'identity.view-otp-settings'];
         }
 
+        // Administration Workspace Phase F-B (docs/ADMIN_DESIGN_SYSTEM.md
+        // §27.6, resolved by explicit confirmation): a dedicated
+        // workspace-visibility permission, deliberately not inferred from
+        // the union of the four per-slot edit permissions
+        // (identity.manage-oauth-provider, etc.) -- that would be a
+        // synthetic rule needing hand-maintenance every time a slot is
+        // added or removed. Individual slot metadata itself has no
+        // per-slot view permission at all (§27.2/§27.6); this permission
+        // gates only whether the workspace nav item exists.
+        if ($this->hasPermission($user, 'administration.providers.view')) {
+            $workspaces[] = ['key' => 'provider-registry', 'required_permission' => 'administration.providers.view'];
+        }
+
         return $workspaces;
     }
 

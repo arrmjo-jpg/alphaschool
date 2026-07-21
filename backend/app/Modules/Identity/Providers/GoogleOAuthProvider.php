@@ -4,7 +4,9 @@ namespace App\Modules\Identity\Providers;
 
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Contracts\HealthCheckable;
+use App\Core\Contracts\TestsCredentials;
 use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Services\ProviderCredentialVault;
 use App\Modules\Identity\Contracts\OAuthProviderContract;
@@ -17,7 +19,7 @@ use RuntimeException;
  * FirebasePushProvider's service-account shape, proving the Vault and
  * Registry impose no assumed shape.
  */
-class GoogleOAuthProvider implements DeclaresProviderSlots, HealthCheckable, OAuthProviderContract
+class GoogleOAuthProvider implements DeclaresProviderSlots, HealthCheckable, OAuthProviderContract, TestsCredentials
 {
     private const SLOT_KEY = 'identity.federation.google-oauth';
 
@@ -35,7 +37,10 @@ class GoogleOAuthProvider implements DeclaresProviderSlots, HealthCheckable, OAu
             new ProviderSlotDefinition(
                 slotKey: self::SLOT_KEY,
                 capabilityContract: OAuthProviderContract::class,
-                credentialFields: ['client_id', 'client_secret'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('client_id', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('client_secret', ProviderCredentialFieldDefinition::TYPE_SECRET),
+                ],
                 owningModule: 'Identity',
                 requiredPermissionToEdit: 'identity.manage-oauth-provider',
             ),
@@ -86,6 +91,20 @@ class GoogleOAuthProvider implements DeclaresProviderSlots, HealthCheckable, OAu
             return false;
         }
 
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    /**
+     * §27.5's Edit->Test->Save rule -- validates the given, unsaved
+     * credentials directly, the Vault is never touched.
+     */
+    public function testCredentials(array $credentials): bool
+    {
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    private function isStructurallyComplete(array $credentials): bool
+    {
         return filled($credentials['client_id'] ?? null) && filled($credentials['client_secret'] ?? null);
     }
 

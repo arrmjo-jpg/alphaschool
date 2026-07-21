@@ -3,6 +3,7 @@
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Services\ApprovalEngine;
 use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Exceptions\ProviderCredentialWriteConflictException;
 use App\Modules\Administration\Models\ProviderCredential;
@@ -28,14 +29,17 @@ class VaultTestProvider implements DeclaresProviderSlots
             new ProviderSlotDefinition(
                 slotKey: 'test.vault-provider',
                 capabilityContract: 'test.category',
-                credentialFields: ['api_key', 'api_secret'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('api_key', 'text'),
+                    new ProviderCredentialFieldDefinition('api_secret', 'secret'),
+                ],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
             new ProviderSlotDefinition(
                 slotKey: 'test.vault-approval-gated',
                 capabilityContract: 'test.category',
-                credentialFields: ['token'],
+                credentialFields: [new ProviderCredentialFieldDefinition('token', 'secret')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
                 approvalRequired: true,

@@ -41,13 +41,15 @@ export type ProviderSlotDetail = {
   configured: boolean
   /** §27.6: the write endpoint (ProviderCredentialVault::assertCanEdit()) is the real gate; this is an accurate preview of it, never a promise beyond it. */
   canEdit: boolean
+  /** Whether the resolved Provider implements TestsCredentials -- optional exactly like HealthCheckable, so Test Connection is absent rather than shown non-functional for a slot with no meaningful pre-save check (§27.5's "never a fake control" rule). */
+  canTest: boolean
   /** Current row's version for optimistic locking (ADR-0019 Decision 5, reusing ADR-0018 Decision 8's algorithm) -- always versioned, never a non-versioned path. */
   version: number
 }
 
+/** Deliberately just `{ ok: boolean }` -- TestsCredentials::testCredentials() returns a plain bool, mirroring HealthCheckable's own conservative, message-less result. A failed test surfaces as a generic, translated failure message client-side, never a backend-supplied diagnostic string. */
 export type TestCredentialsResult = {
   ok: boolean
-  message?: string
 }
 
 export type WriteCredentialsResponse = {

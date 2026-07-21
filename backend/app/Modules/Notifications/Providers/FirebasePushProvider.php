@@ -4,7 +4,9 @@ namespace App\Modules\Notifications\Providers;
 
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Contracts\HealthCheckable;
+use App\Core\Contracts\TestsCredentials;
 use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Services\ProviderCredentialVault;
 use App\Modules\Notifications\Contracts\PushProviderContract;
@@ -19,7 +21,7 @@ use Illuminate\Support\Facades\Http;
  * multi-line PEM string round-tripping correctly through the encrypted
  * cast is a stronger proof than a short token would be.
  */
-class FirebasePushProvider implements DeclaresProviderSlots, HealthCheckable, PushProviderContract
+class FirebasePushProvider implements DeclaresProviderSlots, HealthCheckable, PushProviderContract, TestsCredentials
 {
     private const SLOT_KEY = 'notifications.push.firebase';
 
@@ -33,7 +35,11 @@ class FirebasePushProvider implements DeclaresProviderSlots, HealthCheckable, Pu
             new ProviderSlotDefinition(
                 slotKey: self::SLOT_KEY,
                 capabilityContract: PushProviderContract::class,
-                credentialFields: ['project_id', 'client_email', 'private_key'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('project_id', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('client_email', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('private_key', ProviderCredentialFieldDefinition::TYPE_SECRET),
+                ],
                 owningModule: 'Notifications',
                 requiredPermissionToEdit: 'notifications.manage-push-provider',
             ),
@@ -74,6 +80,20 @@ class FirebasePushProvider implements DeclaresProviderSlots, HealthCheckable, Pu
             return false;
         }
 
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    /**
+     * §27.5's Edit->Test->Save rule -- validates the given, unsaved
+     * credentials directly, the Vault is never touched.
+     */
+    public function testCredentials(array $credentials): bool
+    {
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    private function isStructurallyComplete(array $credentials): bool
+    {
         return filled($credentials['project_id'] ?? null)
             && filled($credentials['client_email'] ?? null)
             && str_contains($credentials['private_key'] ?? '', 'PRIVATE KEY');

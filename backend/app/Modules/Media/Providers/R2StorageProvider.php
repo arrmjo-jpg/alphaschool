@@ -4,7 +4,9 @@ namespace App\Modules\Media\Providers;
 
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Contracts\HealthCheckable;
+use App\Core\Contracts\TestsCredentials;
 use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Services\ProviderCredentialVault;
 
@@ -24,7 +26,7 @@ use App\Modules\Administration\Services\ProviderCredentialVault;
  * implements-check for any contract string that is not a real interface
  * -- this is that case, deliberately.
  */
-class R2StorageProvider implements DeclaresProviderSlots, HealthCheckable
+class R2StorageProvider implements DeclaresProviderSlots, HealthCheckable, TestsCredentials
 {
     public const SLOT_KEY = 'media.storage.r2';
 
@@ -38,7 +40,12 @@ class R2StorageProvider implements DeclaresProviderSlots, HealthCheckable
             new ProviderSlotDefinition(
                 slotKey: self::SLOT_KEY,
                 capabilityContract: 'media.storage',
-                credentialFields: ['key', 'secret', 'region', 'endpoint'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('key', ProviderCredentialFieldDefinition::TYPE_SECRET),
+                    new ProviderCredentialFieldDefinition('secret', ProviderCredentialFieldDefinition::TYPE_SECRET),
+                    new ProviderCredentialFieldDefinition('region', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('endpoint', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                ],
                 owningModule: 'Media',
                 requiredPermissionToEdit: 'media.manage-storage-provider',
             ),
@@ -61,6 +68,20 @@ class R2StorageProvider implements DeclaresProviderSlots, HealthCheckable
             return false;
         }
 
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    /**
+     * §27.5's Edit->Test->Save rule -- validates the given, unsaved
+     * credentials directly, the Vault is never touched.
+     */
+    public function testCredentials(array $credentials): bool
+    {
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    private function isStructurallyComplete(array $credentials): bool
+    {
         return filled($credentials['key'] ?? null)
             && filled($credentials['secret'] ?? null)
             && filled($credentials['endpoint'] ?? null);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Contracts\DeclaresProviderSlots;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Models\ProviderRegistration;
 use App\Modules\Administration\Services\ProviderRegistry;
@@ -41,7 +42,7 @@ class MissingPermissionProvider implements DeclaresProviderSlots
             new ProviderSlotDefinition(
                 slotKey: 'test.missing-permission',
                 capabilityContract: 'test.category',
-                credentialFields: ['api_key'],
+                credentialFields: [new ProviderCredentialFieldDefinition('api_key', 'text')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: '',
             ),
@@ -57,7 +58,7 @@ class ApprovalRequiredWithoutPermissionProvider implements DeclaresProviderSlots
             new ProviderSlotDefinition(
                 slotKey: 'test.approval-no-permission',
                 capabilityContract: 'test.category',
-                credentialFields: ['api_key'],
+                credentialFields: [new ProviderCredentialFieldDefinition('api_key', 'text')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
                 approvalRequired: true,
@@ -80,7 +81,45 @@ class ContractMismatchProvider implements DeclaresProviderSlots
             new ProviderSlotDefinition(
                 slotKey: 'test.contract-mismatch',
                 capabilityContract: FakeCapabilityContract::class,
+                credentialFields: [new ProviderCredentialFieldDefinition('api_key', 'text')],
+                owningModule: 'Test',
+                requiredPermissionToEdit: 'test.manage-provider',
+            ),
+        ];
+    }
+}
+
+/**
+ * The negative case for assertCredentialFieldTypesValid()'s bare-string
+ * rejection -- a bare string in credentialFields is exactly what this
+ * codebase's own Phase 2 scaffold looked like before §27.4/§27.5's
+ * pre-freeze amendment; proving it's refused, not silently accepted.
+ */
+class BareStringCredentialFieldsProvider implements DeclaresProviderSlots
+{
+    public static function providerSlots(): array
+    {
+        return [
+            new ProviderSlotDefinition(
+                slotKey: 'test.bare-string-fields',
+                capabilityContract: 'test.category',
                 credentialFields: ['api_key'],
+                owningModule: 'Test',
+                requiredPermissionToEdit: 'test.manage-provider',
+            ),
+        ];
+    }
+}
+
+class InvalidFieldTypeProvider implements DeclaresProviderSlots
+{
+    public static function providerSlots(): array
+    {
+        return [
+            new ProviderSlotDefinition(
+                slotKey: 'test.invalid-field-type',
+                capabilityContract: 'test.category',
+                credentialFields: [new ProviderCredentialFieldDefinition('api_key', 'integer')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
@@ -96,7 +135,10 @@ class ValidProvider implements DeclaresProviderSlots, FakeCapabilityContract
             new ProviderSlotDefinition(
                 slotKey: 'test.valid-provider',
                 capabilityContract: FakeCapabilityContract::class,
-                credentialFields: ['api_key', 'api_secret'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('api_key', 'text'),
+                    new ProviderCredentialFieldDefinition('api_secret', 'secret'),
+                ],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
@@ -114,6 +156,18 @@ it('refuses to register a slot with no declared credential fields', function () 
 
     app(ProviderRegistry::class)->sync();
 })->throws(InvalidArgumentException::class, 'credentialFields must declare at least one field');
+
+it('refuses a bare string in credentialFields -- every field must declare its own type explicitly', function () {
+    config(['administration.registered_provider_slots' => [BareStringCredentialFieldsProvider::class]]);
+
+    app(ProviderRegistry::class)->sync();
+})->throws(InvalidArgumentException::class, 'must be ProviderCredentialFieldDefinition instances, not bare strings');
+
+it('refuses a credential field declaring an unknown type', function () {
+    config(['administration.registered_provider_slots' => [InvalidFieldTypeProvider::class]]);
+
+    app(ProviderRegistry::class)->sync();
+})->throws(InvalidArgumentException::class, "declares unknown type 'integer'");
 
 it('refuses to register a slot missing requiredPermissionToEdit', function () {
     config(['administration.registered_provider_slots' => [MissingPermissionProvider::class]]);

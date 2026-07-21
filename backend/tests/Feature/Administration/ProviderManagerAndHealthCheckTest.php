@@ -2,6 +2,7 @@
 
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Contracts\HealthCheckable;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Models\ProviderRegistration;
 use App\Modules\Administration\Services\HealthCheckRunner;
@@ -26,7 +27,7 @@ class HealthyFixtureProvider implements DeclaresProviderSlots, HealthCheckable
             new ProviderSlotDefinition(
                 slotKey: 'test.healthy-fixture',
                 capabilityContract: 'test.category',
-                credentialFields: ['token'],
+                credentialFields: [new ProviderCredentialFieldDefinition('token', 'text')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
@@ -47,7 +48,7 @@ class UnhealthyFixtureProvider implements DeclaresProviderSlots, HealthCheckable
             new ProviderSlotDefinition(
                 slotKey: 'test.unhealthy-fixture',
                 capabilityContract: 'test.category',
-                credentialFields: ['token'],
+                credentialFields: [new ProviderCredentialFieldDefinition('token', 'text')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
@@ -68,7 +69,7 @@ class NotCheckableFixtureProvider implements DeclaresProviderSlots
             new ProviderSlotDefinition(
                 slotKey: 'test.not-checkable-fixture',
                 capabilityContract: 'test.category',
-                credentialFields: ['token'],
+                credentialFields: [new ProviderCredentialFieldDefinition('token', 'text')],
                 owningModule: 'Test',
                 requiredPermissionToEdit: 'test.manage-provider',
             ),
@@ -90,14 +91,20 @@ it('registers all four real Playbook Phase 2 providers together, each with a gen
 
     $shapes = ProviderRegistration::whereIn('slot_key', $result['synced'])
         ->pluck('credential_fields', 'slot_key')
-        ->map(fn ($fields) => $fields)
         ->toArray();
 
     // Every shape is genuinely different -- proving the Registry and
     // Vault impose no assumed credential structure (Playbook Phase 2:
     // "prove that the Provider Registry is genuinely generic, not merely
-    // capable of handling multiple SMTP-like providers").
-    $uniqueShapes = array_unique(array_map(fn ($fields) => implode(',', $fields), $shapes));
+    // capable of handling multiple SMTP-like providers"). credential_fields
+    // is now [{name, type}, ...] (§27.4/§27.5), so only the names are
+    // compared -- two slots sharing a field name but different types
+    // would still count as "the same shape" here, which is correct: this
+    // assertion is about structural genericity, not about type coverage.
+    $uniqueShapes = array_unique(array_map(
+        fn ($fields) => implode(',', array_column($fields, 'name')),
+        $shapes,
+    ));
     expect($uniqueShapes)->toHaveCount(4);
 });
 

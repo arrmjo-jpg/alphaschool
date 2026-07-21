@@ -4,7 +4,9 @@ namespace App\Modules\Notifications\Providers;
 
 use App\Core\Contracts\DeclaresProviderSlots;
 use App\Core\Contracts\HealthCheckable;
+use App\Core\Contracts\TestsCredentials;
 use App\Core\ValueObjects\ConfigurationScopeContext;
+use App\Core\ValueObjects\ProviderCredentialFieldDefinition;
 use App\Core\ValueObjects\ProviderSlotDefinition;
 use App\Modules\Administration\Services\ProviderCredentialVault;
 use App\Modules\Notifications\Contracts\EmailProviderContract;
@@ -19,7 +21,7 @@ use Illuminate\Support\Facades\Mail;
  * on App\Modules\Administration\Services\ProviderRegistry for the
  * self-registration convention this relies on.
  */
-class SmtpEmailProvider implements DeclaresProviderSlots, EmailProviderContract, HealthCheckable
+class SmtpEmailProvider implements DeclaresProviderSlots, EmailProviderContract, HealthCheckable, TestsCredentials
 {
     private const SLOT_KEY = 'notifications.email.smtp';
 
@@ -33,7 +35,13 @@ class SmtpEmailProvider implements DeclaresProviderSlots, EmailProviderContract,
             new ProviderSlotDefinition(
                 slotKey: self::SLOT_KEY,
                 capabilityContract: EmailProviderContract::class,
-                credentialFields: ['host', 'port', 'username', 'password', 'encryption'],
+                credentialFields: [
+                    new ProviderCredentialFieldDefinition('host', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('port', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('username', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                    new ProviderCredentialFieldDefinition('password', ProviderCredentialFieldDefinition::TYPE_PASSWORD),
+                    new ProviderCredentialFieldDefinition('encryption', ProviderCredentialFieldDefinition::TYPE_TEXT),
+                ],
                 owningModule: 'Notifications',
                 requiredPermissionToEdit: 'notifications.manage-email-provider',
             ),
@@ -77,6 +85,22 @@ class SmtpEmailProvider implements DeclaresProviderSlots, EmailProviderContract,
             return false;
         }
 
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    /**
+     * §27.5's Edit->Test->Save rule -- validates the given, unsaved
+     * credentials directly, the Vault is never touched. Same
+     * conservative completeness check as healthCheck(), just against a
+     * different source of values.
+     */
+    public function testCredentials(array $credentials): bool
+    {
+        return $this->isStructurallyComplete($credentials);
+    }
+
+    private function isStructurallyComplete(array $credentials): bool
+    {
         return filled($credentials['host'] ?? null)
             && is_numeric($credentials['port'] ?? null)
             && filled($credentials['username'] ?? null)

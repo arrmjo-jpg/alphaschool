@@ -208,7 +208,10 @@ class ProviderCredentialVault
      */
     private function assertCredentialShape(ProviderRegistration $registration, array $credentials): void
     {
-        $declared = $registration->credential_fields;
+        // credential_fields is stored as [{name, type}, ...] (§27.4/§27.5
+        // pre-freeze amendment) -- only the names matter for shape
+        // validation, the Vault never cares about a field's render type.
+        $declared = array_column($registration->credential_fields, 'name');
         $missing = array_diff($declared, array_keys($credentials));
         $unexpected = array_diff(array_keys($credentials), $declared);
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Administration\Http\Controllers\ConfigurationController;
+use App\Modules\Administration\Http\Controllers\ProviderRegistryController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Identity\Http\Controllers\MeController;
 use App\Modules\Identity\Http\Controllers\WorkspaceController;
@@ -49,6 +50,21 @@ Route::prefix('v1')->group(function () {
         Route::patch('/categories/{capability}/settings/{key}', [ConfigurationController::class, 'writeSetting'])
             ->where('key', '.*')
             ->name('categories.settings.write');
+    });
+
+    // Phase F-B (docs/ADMIN_DESIGN_SYSTEM.md §27.13) -- a thin adapter
+    // over ProviderManager/ProviderCredentialVault/HealthCheckRunner, no
+    // new business logic. Unlike Configuration Platform, view-gating has
+    // no per-slot permission to check at all (§27.2/§27.6 -- no
+    // is_super_admin bypass needed because there is nothing to bypass);
+    // the test and write endpoints both defer to the exact same
+    // required_permission_to_edit check, with no bypass, matching
+    // ProviderCredentialVault::assertCanEdit()'s own strict behavior.
+    Route::middleware('auth:sanctum')->prefix('administration/providers')->name('administration.providers.')->group(function () {
+        Route::get('/', [ProviderRegistryController::class, 'slots'])->name('index');
+        Route::get('/{slotKey}', [ProviderRegistryController::class, 'slot'])->where('slotKey', '.*')->name('show');
+        Route::post('/{slotKey}/test', [ProviderRegistryController::class, 'testCredentials'])->where('slotKey', '.*')->name('test');
+        Route::patch('/{slotKey}', [ProviderRegistryController::class, 'writeCredentials'])->where('slotKey', '.*')->name('write');
     });
 
     // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge
