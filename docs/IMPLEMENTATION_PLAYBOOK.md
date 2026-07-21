@@ -30,6 +30,7 @@ Phases 0–4 are specified to full sprint detail — they are actionable today. 
 12. **ADR compliance review performed** — every new component explicitly checked against the Domain Blueprint, existing ADRs, and Core/Foundation layering rules, not inferred from tests/Pint/deptrac passing (see "Sprint completion policy" below for why this must be a distinct pass).
 13. **No unresolved architecture-review finding** — any finding from item 12 is fixed (or explicitly, documentedly deferred) before the sprint is done.
 14. **The sprint's Git tag points to the commit where items 1–13 are all true** — not an earlier commit later found to need a fix.
+15. **Hand-off documentation is complete** — the phase's documentation update satisfies all nine points of the Hand-off Documentation Standard below, verified against that checklist directly, not inferred from "docs were touched."
 
 ### Quality gates — nothing merges to `main` without all of these being true
 
@@ -656,6 +657,24 @@ Unlike the Technical Debt Register above (deliberately postponed, low-urgency it
 | `docs/developer/*` | A new shared pattern/convention is introduced (e.g. adopting `HasTemporalAssignment`, implementing the Identity Maintenance contracts) | Ordinary business-logic changes within an already-documented pattern |
 | User-facing docs | From Phase 4 onward, once there's a real registrar/guardian-facing workflow to document | Phases 0–3 (nothing user-facing exists yet) |
 | `CHANGELOG.md` | Every sprint, every merged PR of consequence | — |
+
+### Hand-off Documentation Standard (binding, added 2026-07-21)
+
+Documentation is this project's source of truth, not the conversation that produced it. Every completed phase or sub-phase — across the backend Phase sequence above, Frontend Track F1, and the Foundation Track / Administration Platform work — must leave the project in a state where **a new agent with zero prior conversation history can read the docs alone and correctly continue the work**, with no additional explanation from the user. This is now part of the Definition of Done (item 15) exactly as the Sprint completion policy's items 2–3 were: not a one-time reaction, a standing addition to the baseline checklist for everything that follows.
+
+Concretely, before a phase is considered done, its documentation update (the phase's own narrative entry in this Playbook, `ADMINISTRATION_PLATFORM_PLAYBOOK.md`, or `ADMIN_DESIGN_SYSTEM.md`, whichever track owns it, plus `CHANGELOG.md`) must cover all nine of the following. This is the checklist to write against, not a style suggestion:
+
+1. **Architectural decisions and their reasoning.** Any decision that's durable and cross-cutting gets a new or amended ADR; a decision scoped to one workspace/feature gets recorded inline in that feature's own design section (e.g. an `ADMIN_DESIGN_SYSTEM.md` §N amendment). Either way, the *reasoning* is recorded, not just the outcome — a future agent needs to know why, to know when the decision still applies.
+2. **What was implemented.** Concrete: file paths, class/component names, not "the feature was added."
+3. **What was intentionally not implemented, and why.** Silence reads as an oversight; an explicit "out of scope, because X" reads as a decision. Never let a deferred piece go unmentioned.
+4. **New or modified backend/frontend contracts.** Named exactly as they exist in code (interface/type names, request/response shapes), so a future agent can grep for them rather than reconstruct them from prose.
+5. **Public APIs, interfaces, DTOs, and extension points.** Same standard as #4 — exact names, exact locations.
+6. **Verification steps actually performed.** What was actually run and observed (test counts, live-browser findings, specific commands) — never "should work" or "this would pass." If something could not be verified (e.g. a permission scenario Spatie Teams can't exercise over real HTTP), say so explicitly and say what was relied on instead.
+7. **Known limitations or deferred work.** Anything found during the phase that's real but out of scope — including operational anomalies (e.g. an unexplained data-loss incident) — gets its own visible mention, not buried in a verification paragraph.
+8. **The exact next recommended implementation step.** One concrete action, named the way the codebase names it (e.g. "Phase F-C: implement X in `path/to/file.php`"), not a vague "continue with the next part."
+9. **Conventions or patterns established that future work should follow.** If it's durable and reusable beyond this one phase, promote it into the relevant frozen design doc (`ADMIN_DESIGN_SYSTEM.md`, `DOMAIN_BLUEPRINT.md`) so later phases inherit it automatically rather than re-discovering it from a old phase's prose.
+
+See the Provider Registry Phase F-A/F-B entries above for the reference shape this checklist produces in practice.
 
 ---
 
