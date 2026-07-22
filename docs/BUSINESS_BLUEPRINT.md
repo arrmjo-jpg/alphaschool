@@ -126,6 +126,7 @@ Full ADRs live in `docs/adr/business/` (template: `docs/adr/business/template.md
 | [BUS-0020](adr/business/0020-academic-learning-boundary.md) | Subject (Academic) vs. Course Template (Learning) boundary formalized; deeper content split remains Proposed | 🟢 Accepted (boundary) / 🟡 Proposed (deeper split) | Academic, Learning |
 | [BUS-0021](adr/business/0021-adr-granularity-one-decision-per-adr.md) | ADRs hold one central decision; themed ADRs split once sub-decisions stop being coupled (forward-looking, BUS-0017 not retroactively split) | 🟢 Accepted | All (documentation architecture) |
 | [BUS-0022](adr/business/0022-reception-domain-boundary.md) | Reception owns Visitor/Visit identity; Smart Campus owns only Visitor Access Credential/Access Events and consumes Reception's Visitor — a naming collision, not an ownership transfer | 🟢 Accepted | Reception, Smart Campus |
+| [BUS-0023](adr/business/0023-reception-external-party-and-visit-lifecycle.md) | External Party (optional Master Data), polymorphic Correspondence routing, full Visit lifecycle documented end-to-end | 🟢 Accepted (External Party itself 🟡 Proposed) | Reception |
 
 ### Open Architecture Questions
 
