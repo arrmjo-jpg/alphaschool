@@ -2,7 +2,7 @@
 
 [← Back to Business Blueprint](../BUSINESS_BLUEPRINT.md)
 
-**Template:** v1 (retrofit-pending to v3) · **Related ADRs:** [BUS-0017](../adr/business/0017-academic-organizational-structure.md) (a student's Curriculum Path and Curriculum Specification version bind as part of Enrollment's own period record, effective-dated, not a new Assignment type) · **Related Domains:** [Academic](academic.md) (owns Year/Grade/Section/Curriculum Path/Curriculum Specification that Enrollment references), [Admissions](admissions.md) (hands off into this domain), [Accounting](accounting.md), [Learning](learning.md), [School Health Clinic](health-clinic.md), [Smart Campus](smart-campus.md) (all consume Student/Enrollment)
+**Template:** v1 (retrofit-pending to v3) · **Related ADRs:** [BUS-0017](../adr/business/0017-academic-organizational-structure.md) (a student's Curriculum Path and Curriculum Specification version bind as part of Enrollment's own period record, effective-dated, not a new Assignment type) · **Related Domains:** [Academic](academic.md) (owns Year/Grade/Section/Curriculum Path/Curriculum Specification that Enrollment references), [Admissions](admissions.md) (hands off into this domain), [Accounting](accounting.md), [Learning](learning.md), [School Health Clinic](health-clinic.md), [Smart Campus](smart-campus.md), [Reception](reception.md) (a Visit may reference a Student) (all consume Student/Enrollment)
 
 ### Purpose
 The permanent record of "this person is or was ever a student," and the mechanics of their enrollment period.

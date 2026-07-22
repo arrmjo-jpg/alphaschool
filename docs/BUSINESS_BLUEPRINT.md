@@ -14,6 +14,7 @@ This is business/product domain discovery — purpose, responsibilities, workflo
 - **Program vs. Module**: an offering with its own enrollment/branding/portal (School, Kindergarten) is a Program; a capability that operates on students already enrolled elsewhere (Summer Camp, Scout Camp) is a Module.
 - **Provider Model**: every external integration is modeled as a named capability with swappable providers — `DeclaresProviderSlots`, already built and proven (SMTP, Google OAuth, Firebase, R2 Storage are real, shipped Providers today) — not a hardcoded vendor.
 - **Approval Engine, Audit, Number Generator, Document Engine, Media**: already-built or already-designed Core/Foundation services every domain draws on rather than reimplementing.
+- **People**: the frozen People/User split from `docs/DOMAIN_BLUEPRINT.md` (technical architecture, not re-documented here) — the authoritative source of Person identity that Inventory, Smart Campus, and any other domain consuming "Person identity" reference; not itself one of this document's 13 business domains.
 
 ## Documentation standards
 
@@ -85,11 +86,11 @@ This document is documentation-first. Conversation is temporary; this index, the
 | Domain | Consumes from | Feeds into |
 |---|---|---|
 | Administration | — (depends on nothing) | Every domain (permissions, Provider Registry credentials) |
-| Platform Services | — | Accounting, Academic, HR (Document Templates) |
+| Platform Services | — | Accounting, Academic, HR, Reception (Document Templates for visitor badges, Media for correspondence archiving) |
 | Academic | HR (Employee/Position for Teacher/Coordinator Assignment; Department for Academic Department cross-reference) | Students, Accounting, Learning, School Operations, Inventory |
-| Students | Academic | Accounting, Transportation, Library, Learning, Health Clinic, Smart Campus |
+| Students | Academic | Accounting, Transportation, Library, Learning, Health Clinic, Smart Campus, Reception (a Visit may reference a Student) |
 | Admissions | — | Students (handoff on acceptance) |
-| HR | — | Payroll (future), Academic (teacher assignments) |
+| HR | — | Payroll (future), Academic (teacher assignments), Reception (Employee/Department for host resolution) |
 | Accounting | Academic, Students | — |
 | Learning | Academic, Students | Academic's gradebook (grades flow in, Academic owns the rule) |
 | Health Clinic | Students | Students/Attendance (medical-excuse flag via events, never direct table access) |

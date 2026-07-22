@@ -12,7 +12,7 @@
 Govern who and what may physically move through the campus — doors, gates, parking — and provide the surveillance layer (CCTV) that secures it. The platform's identity-gated physical-security layer, distinct from School Operations' broadcast/scheduling layer.
 
 ### Responsibilities
-Access Control (Student, Employee, Visitor, and Parking gates), Visitor Management, CCTV Integration, Smart Classroom device control, IoT Sensors, Parking, and participation in coordinated emergency response.
+Access Control (Student, Employee, Visitor, and Parking gates), Visitor Access Control, CCTV Integration, Smart Classroom device control, IoT Sensors, Parking, and participation in coordinated emergency response.
 
 ### Business Capabilities
 Authenticate a person at a physical checkpoint via card, QR, face, or fingerprint and grant or deny passage · issue and manage a time-bounded, revocable Access Credential for a Visitor already registered in [Reception](reception.md) (this domain never registers a Visitor itself — BUS-0022) · maintain a security blacklist · surface CCTV footage against logged incidents from any domain for after-the-fact investigation · control smart-classroom environment (board, projector, lighting, AC) and capture automatic attendance from access events · monitor environmental IoT sensors and raise alerts on anomaly · manage parking gate access and permit assignment · participate in coordinated emergency response with the physical action correct for the emergency *type* — evacuation and lockdown are opposite responses, not variations of one "emergency mode."
@@ -57,21 +57,20 @@ New Access Control hardware categories, new biometric modalities, new CCTV analy
 Visitor pre-registration and the visitor's own pass now live on [Reception](reception.md)'s mobile surface, not here (BUS-0022) — this domain's Parent-facing surface is limited to their own standing Access Credential (daily pickup), never a per-visit registration flow.
 
 ### Dashboards
-Live access-event feed by Access Point · visitors currently on campus · device connectivity map · parking occupancy.
+Live access-event feed by Access Point · visitors currently holding an active Access Credential (distinct from Reception's "visitors currently checked in" — a Visit doesn't always require a credential) · device connectivity map · parking occupancy.
 
 ### Reports
-Access history by Person/Access Point · visitor log · blacklist incident report · device health · parking utilization.
+Access history by Person/Access Point · visitor Access Credential usage log (distinct from Reception's own Visit log — this one tracks credential/gate usage, not the visit record itself) · blacklist incident report · device health · parking utilization.
 
 ### KPIs
-Access grant success rate · average visitor processing time · device uptime · false-reject rate — a genuine security-usability metric, since too many false rejects trains people to prop doors open, which defeats the whole domain's purpose.
+Access grant success rate · average visitor Access Credential issuance time (distinct from Reception's own "average visitor check-in time" KPI — this measures credential turnaround, not front-desk processing) · device uptime · false-reject rate — a genuine security-usability metric, since too many false rejects trains people to prop doors open, which defeats the whole domain's purpose.
 
 ### Security Classification
 **Highly Sensitive**, for a third distinct reason from the other two OT/sensitive domains in this document so far: biometric identifiers are the platform's most legally protected data category in most jurisdictions, and unlike a password, a compromised biometric template can't be reset. CCTV footage carries its own separate, serious privacy/retention obligation. This domain carries the platform's single highest data-protection bar — above even Health Clinic's medical records in several regulatory regimes.
 
 ### Permissions
 - **Security Manager** — full.
-- **Security Staff** — day-to-day visitor/access operations, no device or credential configuration.
-- **Front Desk** — visitor registration only.
+- **Security Staff** — day-to-day access-credential and device-monitoring operations, no device or credential *configuration*. Visitor registration itself is not this domain's permission to grant — that's Reception's **Front Desk Staff** role (BUS-0022); this domain has no "Front Desk" permission of its own.
 - **Emergency Activator** — the same cross-cutting permission shared with School Operations and the Emergency Coordination service, not domain-specific.
 - **System Administrator** — device/Provider credential management only, access itself logged and exceptional, the same standing established for Health Clinic.
 

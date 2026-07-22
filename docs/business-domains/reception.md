@@ -6,6 +6,8 @@
 
 **Design history.** This domain was documented only after a dedicated bounded-context review, run with the same discipline as Academic's: no file was written until the boundary with Smart Campus's already-shipped "Visitor Management" was resolved. The first-draft resolution ("Visitor ownership transfers from Smart Campus to Reception") was itself corrected before anything was written — the real issue was that "Visitor" had always named two distinct concepts (an administrative identity and a physical-access credential), the same class of collision already found and fixed for Program, Department, and Course. See BUS-0022 for the full resolution.
 
+**Domain vs. Module, same reconciliation as Health Clinic, School Operations, Smart Campus, and Inventory**: no independent enrollment — Module-shaped on the Program axis, since Reception never issues its own enrollment/branding/portal. Full Domain on the bounded-context axis: independent Master Data (Visitor, Visit, Correspondence Item — none borrowed from another domain), its own security/audit perimeter (visitor and correspondence logs carry real accountability weight), and a genuinely distinct front-of-house process from every other domain in this document.
+
 ### Purpose
 The platform's first administrative point of contact with anyone external to the institution — registering why a Visitor is here and who they've come to see, and managing the flow of incoming and outgoing correspondence and parcels between the outside world and internal departments. Deliberately owns no physical access-control mechanism of its own: Reception answers "who arrived and why"; [Smart Campus](smart-campus.md) answers "is this person authorized to pass this door" (BUS-0022).
 
