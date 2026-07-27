@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Core\Models\ReasonCode;
+use App\Modules\Admissions\Models\Applicant;
 use Illuminate\Database\Seeder;
 
 /**
@@ -33,6 +34,27 @@ class ReasonCodeSeeder extends Seeder
         foreach ($guardianStudentReasons as $reason) {
             ReasonCode::updateOrCreate(
                 ['context' => 'guardian_student_relationship', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        // Sprint 4.2 -- Applicant.rejection_reason_code_id's own context,
+        // seeded now because DecideApplicationAction::reject() genuinely
+        // requires one this sprint, not speculatively.
+        $applicationRejectionReasons = [
+            ['code' => 'assessment_below_threshold', 'label' => ['en' => 'Assessment score below threshold', 'ar' => 'نتيجة الاختبار أقل من الحد المطلوب']],
+            ['code' => 'no_seat_available', 'label' => ['en' => 'No seat available', 'ar' => 'لا يوجد مقعد شاغر']],
+            ['code' => 'incomplete_documentation', 'label' => ['en' => 'Incomplete documentation', 'ar' => 'أوراق ثبوتية غير مكتملة']],
+            ['code' => 'withdrawn_by_guardian', 'label' => ['en' => 'Withdrawn by guardian', 'ar' => 'تم السحب من قبل ولي الأمر']],
+        ];
+
+        // Independent Review fix -- references Applicant's own constant
+        // rather than a second, independently-maintained copy of the
+        // same literal string, now that Applicant::reject() validates
+        // against it directly.
+        foreach ($applicationRejectionReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => Applicant::REJECTION_REASON_CONTEXT, 'code' => $reason['code']],
                 ['label' => $reason['label'], 'is_active' => true],
             );
         }
