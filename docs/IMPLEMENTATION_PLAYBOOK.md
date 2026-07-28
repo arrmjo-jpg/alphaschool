@@ -605,11 +605,50 @@ Fixed by renaming the methods to `nextGradeLevelForBranch()`/`isFinalGradeLevelF
 
 ---
 
-## Phase 5 onward — Epic-level only (full sprint planning deferred to a dedicated pass per phase)
+## Phase 5 — Academic Build-out (Sections)
+
+**Scope of this section:** Section, SectionAssignment, HomeroomAssignment only — the narrower slice named "Sprint A/B" during the Phase 5 Architecture Pass. Timetables, Attendance, Grades/Grading Scale, Subject Offering, Report Cards, Coordinator/Department-Head assignment, and Branch Transfer are all explicitly out of scope here (Branch Transfer deliberately deferred until this ships, per the same Phase 5 Architecture Pass — see the Technical Debt Register).
+
+### Sprint A0 — `HasTemporalAssignment` hardening
+
+See the High-Priority Core Architecture Backlog above — completed as a prerequisite before Section's own consumers of the trait were built, not alongside them.
+
+### Sprint A — Architecture Pass (design only)
+
+A dedicated Architecture Pass, following the same discipline as Sprint 4.3/4.4: research first (no existing Section schema/code found anywhere), a **Layering Review before any other design decision** (the standing instruction added after Sprint 4.3's own critical `deptrac` finding), then scope/domain-ownership/business-rules, ending with explicit open questions rather than silent decisions. Went through two rounds of review before approval:
+
+- **Section is per-year, not a permanent catalog** (unlike `GradeLevel`) — scoped to `(branch_id, academic_year_id, grade_level_id)`, created fresh each year. This single decision was assessed as removing an entire category of ambiguity (does the roster/teacher/capacity carry over year to year) by construction, rather than needing to be answered case by case.
+- **No `section_id` column on `enrollments`** — Section membership is `SectionAssignment`'s own fact, keeping `Enrollment`'s already-frozen shape (Sprint 4.3) untouched.
+- **`Section.name` is a single field**, not bilingual — expected values ("A", "B", "1") aren't translatable content; revisit only if a real deployment needs localized section names.
+- **Capacity is informational only this sprint** — no hard enforcement, since whether an over-capacity exception is ever legitimate is a real business-policy question, not yet decided (deliberately not assumed either way).
+- **Homeroom Teacher assignment reuses the Assignment Engine pattern** (`HasTemporalAssignment`) — settled by BUS-0019, not an open question: a mutable `section.homeroom_teacher_id` field was explicitly rejected there.
+- **Coordinator/Department-Head assignment deferred** — this sprint is Homeroom only.
+- **The Consistency Invariant** (added during review, not part of the original draft): a `SectionAssignment` must never link an `Enrollment` to a `Section` whose `branch_id`/`academic_year_id`/`grade_level_id` don't all agree — enforced inside `SectionAssignment`'s own creation path, not left as an implicit consequence of "it references Enrollment," since it's an independent aggregate that could in principle be constructed from anywhere.
+- **`HasTemporalAssignment`'s two known Core gaps (concurrency safety, date normalization) elevated from an open question to a prerequisite gate** — see Sprint A0.
+
+### Sprint B — Sections Implementation
+
+**Scope — IN:** `Section` (Academic's own Master Data, per-year); `SectionAssignment` (Student ↔ Section via Enrollment, effective-dated, the Consistency Invariant enforced in the model itself); `HomeroomAssignment` (Employee ↔ Section, effective-dated, per BUS-0019); `AssignSectionAction`/`AssignHomeroomTeacherAction` (creation only — closing/reassigning uses the inherited `closeAssignment()`/`cancelAssignment()` directly, matching `GuardianStudent`'s own precedent of needing no dedicated Action for that).
+
+**Scope — OUT:** everything named in this section's own opening scope note above. No events were added for `SectionAssignment`/`HomeroomAssignment` in this pass — `GuardianStudent` (the trait's first consumer) has none either, and no real subscriber exists yet (Attendance/Timetable don't exist) — adding them now would be speculative; the original Architecture Pass draft named them, and this is a deliberate, disclosed deviation from that draft, not a silent omission.
+
+**Domain ownership / Layering:** `Section`/`SectionAssignment`/`HomeroomAssignment` all live in Academic (Domain), per the Layering Review — each Action locks its own natural anchor row first (`AssignSectionAction` locks `Enrollment`, since it's `SectionAssignment`'s own `temporalScopeAttributes()` anchor; `AssignHomeroomTeacherAction` locks `Section`, for the same reason), matching every other Action in this codebase's own discipline.
+
+**Definition of Done:** a `SectionAssignment` linking an `Enrollment` to a `Section` that disagree on branch/year/grade is rejected by the Consistency Invariant, proven by a test; one active `SectionAssignment` per `Enrollment` and one active `HomeroomAssignment` per `Section` are both enforced (via `HasTemporalAssignment`'s own overlap guard, now concurrency-safe per Sprint A0); a mid-year Section change and a homeroom-teacher reassignment are both provable via the inherited `closeAssignment()` mechanism; `deptrac analyse --no-cache` reports zero violations.
+
+**Testing checklist:** model-level tests for `Section` (uniqueness, per-year non-uniqueness across years, deactivation), `SectionAssignment` (Consistency Invariant — both a fully-mismatched and a grade-level-only mismatch case — overlap rejection, mid-year reassignment), `HomeroomAssignment` (overlap rejection, reassignment); Action-level tests for both (success, not-active-Enrollment rejection, closed-Academic-Year rejection); a genuine dual-connection MariaDB concurrency proof for `AssignSectionAction`'s `Enrollment` lock.
+
+**Git Milestone:** `v1.7-academic-sections`
+
+**Status: COMPLETE (2026-07-28).** Delivered exactly as scoped above. Verified: 455/455 tests (20 new), Pint clean, PHPStan zero new error *categories* (213, up from 187 — every additional finding confirmed to be the same pre-existing `missingType.generics`/`missingType.iterableValue` debt class already present on `GuardianStudent`'s own `temporalScopeAttributes()`, not a new kind of error), `deptrac analyse --no-cache` zero violations, migrations and rollback both proven.
+
+---
+
+## Phase 6 onward — Epic-level only (full sprint planning deferred to a dedicated pass per phase)
 
 | Phase | Epics (indicative, not sprint-final) | Key dependency | Key risk to watch for |
 |---|---|---|---|
-| **5 — Academic build-out** | Sections/Classes; Timetables; Attendance; Grades + Grading Scale (versioned per Addendum A4); Homeroom/Subject Teacher Assignments (via the Assignment pattern); Report Card generation + finalization snapshot | Phase 4 (Enrollment) | Building Grading Scale as a flat setting instead of a properly versioned entity — this was explicitly flagged as needing real versioning, not just a snapshot |
+| **5 — Academic build-out (remaining epics)** | Timetables; Attendance; Grades + Grading Scale (versioned per Addendum A4); Subject Offering/Subject Teacher Assignment; Report Card generation + finalization snapshot; Branch Transfer (deliberately deferred until Sections shipped, per its own Phase 5 Architecture Pass note above) | Phase 5 Sprint B (Sections, now complete) | Building Grading Scale as a flat setting instead of a properly versioned entity — this was explicitly flagged as needing real versioning, not just a snapshot |
 | **6 — HR** | `Employment` aggregate (mirrors Enrollment, Addendum B2); Position/Salary history *within* Employment, not flatly on Employee; Assignment instances (Bus Driver, Committee Member, etc.) | Phase 2 (Employee shell) | Reintroducing Position/Salary as direct Employee children instead of nesting under Employment — this is a named, specific regression risk given the correction only happened late in Phase 1 architecture design |
 | **7 — Finance** | Invoice/Journal aggregates (immutable after posting); Fee Plan versions; Billing Policy entities (Sibling/Employee Discount, Scholarship via Approval Engine, Late Fee, Installment) owned by Finance, consuming Household data via People's public service; real `Billable` implementation replacing Phase 4's stub; gapless Number Generator mode for real invoice numbering | Phase 4 (stub `Billable` interface already exists) | Treating Billing Policies as one generic "Policy Version" table instead of several small, properly-typed entities — explicitly rejected in the Blueprint as a God-Object risk |
 | **8 — Inventory / Library / Transportation / LMS / Reporting** | Each independently — see Parallel Development Strategy below | Phase 2 (People) + Phase 5 (Academic, for Library/Transport's Student linkage) | Any of these reaching directly into another's tables instead of through events/contracts — this is exactly what `deptrac` exists to catch, and by this phase it has real teeth |

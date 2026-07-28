@@ -58,5 +58,36 @@ class ReasonCodeSeeder extends Seeder
                 ['label' => $reason['label'], 'is_active' => true],
             );
         }
+
+        // Phase 5, Sprint B -- SectionAssignment/HomeroomAssignment's own
+        // closeAssignment()/cancelAssignment() contexts, seeded now
+        // (not deferred like SuspensionRecord's own context in Sprint
+        // 4.3) because both models' inherited HasTemporalAssignment
+        // methods are directly callable and tested this sprint, even
+        // though no dedicated "reassign/replace" orchestrating Action
+        // exists yet -- a real, exercised code path, not a speculative one.
+        $sectionAssignmentReasons = [
+            ['code' => 'section_transfer', 'label' => ['en' => 'Transferred to a different section', 'ar' => 'تم النقل إلى شعبة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($sectionAssignmentReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'section_assignment', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        $homeroomTeacherReasons = [
+            ['code' => 'teacher_reassigned', 'label' => ['en' => 'Teacher reassigned to a different section', 'ar' => 'تم نقل المعلم إلى شعبة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($homeroomTeacherReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'homeroom_teacher_assignment', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
     }
 }
