@@ -4,8 +4,11 @@ use App\Core\Models\ReasonCode;
 use App\Modules\Admissions\Actions\DecideApplicationAction;
 use App\Modules\Admissions\Actions\RecordAssessmentResultAction;
 use App\Modules\Admissions\Actions\WithdrawApplicationAction;
+use App\Modules\Admissions\Events\ApplicantConverted;
 use App\Modules\Admissions\Exceptions\InvalidRejectionReasonException;
 use App\Modules\Admissions\Models\Applicant;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 function applicationRejectionReason(?string $context = null): ReasonCode
 {
@@ -86,6 +89,62 @@ it('does not allow a terminal Applicant to transition again', function () {
     // isTerminal() blocks the transition -- accept() is already
     // terminal, so withdraw() must be a no-op, not an overwrite.
     expect($applicant->fresh()->status)->toBe(Applicant::STATUS_ACCEPTED);
+});
+
+it('converts an accepted Applicant to converted, and no-ops on a second direct call', function () {
+    $applicant = Applicant::factory()->accepted()->create();
+
+    $applicant->convert();
+
+    expect($applicant->fresh()->status)->toBe(Applicant::STATUS_CONVERTED)
+        ->and($applicant->fresh()->converted_at)->not->toBeNull();
+
+    $convertedAt = $applicant->fresh()->converted_at;
+
+    // Sprint 4.3 Technical Specification §9 -- convert() is a defensive
+    // backstop behind ConvertApplicantToStudentAction's own upfront
+    // check, so a second direct call must no-op, not throw or overwrite
+    // converted_at.
+    $applicant->fresh()->convert();
+
+    expect($applicant->fresh()->status)->toBe(Applicant::STATUS_CONVERTED)
+        ->and($applicant->fresh()->converted_at)->toEqual($convertedAt);
+});
+
+/**
+ * Independent Review Finding 2 regression test -- convert() previously
+ * dispatched ApplicantConverted synchronously, so a caller (e.g.
+ * ConvertApplicantToStudentAction) that opens a transaction around
+ * convert() and later rolls back would still have already fired the
+ * event, unlike StudentEnrolled's own DB::afterCommit() discipline.
+ * This forces a rollback after convert() runs and proves the event
+ * never fires -- it would have, before the fix.
+ */
+it('defers ApplicantConverted until the wrapping transaction commits, matching StudentEnrolled\'s own discipline', function () {
+    Event::fake([ApplicantConverted::class]);
+
+    $applicant = Applicant::factory()->accepted()->create();
+
+    try {
+        DB::transaction(function () use ($applicant): void {
+            $applicant->convert();
+
+            throw new RuntimeException('forced rollback');
+        });
+    } catch (RuntimeException) {
+        // expected
+    }
+
+    Event::assertNotDispatched(ApplicantConverted::class);
+    expect($applicant->fresh()->status)->toBe(Applicant::STATUS_ACCEPTED);
+});
+
+it('leaves a non-accepted Applicant\'s status unchanged when convert() is called', function () {
+    $applicant = Applicant::factory()->tested()->create();
+
+    $applicant->convert();
+
+    expect($applicant->fresh()->status)->toBe(Applicant::STATUS_TESTED);
 });
 
 it('leaves an already-tested Applicant\'s status unchanged when another assessment is recorded', function () {

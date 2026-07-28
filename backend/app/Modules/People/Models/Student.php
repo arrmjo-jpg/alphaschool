@@ -6,11 +6,14 @@ use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\ValueObjects\ReassignmentImpact;
+use App\Modules\People\Events\StudentReactivated;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -19,15 +22,15 @@ use Spatie\Activitylog\Support\LogOptions;
  * The permanent identity anchor for "this Person has ever been enrolled
  * here" (docs/DOMAIN_BLUEPRINT.md §3, ADR-0004). Owns ONLY a coarse
  * lifecycle status -- academic year, grade, branch, and section belong
- * to Enrollment (Phase 4), never to Student directly. A withdrawn
- * student's later re-admission opens a new Enrollment period against
- * this same Student row; Student is never recreated.
+ * to Enrollment (Sprint 4.3), never to Student directly. A withdrawn or
+ * graduated student's later re-admission reuses this same Student row
+ * via reactivate() below; Student is never recreated.
  *
  * Never branch-scoped (Addendum B6): branch relevance arrives entirely
- * through Enrollment, never a column here. No `current_enrollment_id`
- * yet -- it would reference a table that doesn't exist until Phase 4.
- * No `student_number` yet -- numbering is explicitly out of this
- * sprint's scope pending the still-open numbering-scheme decision.
+ * through Enrollment, never a column here. `current_enrollment_id`
+ * added Sprint 4.3, alongside Enrollment itself. No `student_number`
+ * yet -- numbering is explicitly out of scope pending the still-open
+ * numbering-scheme decision.
  */
 class Student extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
@@ -42,7 +45,7 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
 
     public const STATUS_WITHDRAWN = 'withdrawn';
 
-    protected $fillable = ['person_id', 'lifecycle_status'];
+    protected $fillable = ['person_id', 'lifecycle_status', 'current_enrollment_id'];
 
     protected static function newFactory(): StudentFactory
     {
@@ -52,6 +55,43 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function currentEnrollment(): BelongsTo
+    {
+        return $this->belongsTo(Enrollment::class, 'current_enrollment_id');
+    }
+
+    /**
+     * The Return-case reactivation (Sprint 4.3 Technical Specification
+     * §6/§11) -- transitions from STATUS_WITHDRAWN or STATUS_GRADUATED
+     * back to STATUS_ACTIVE. No-op if already active, matching this
+     * Phase's established idempotency convention. The only
+     * lifecycle_status-transitioning method this sprint adds --
+     * withdraw()/graduate() are Sprint 4.4's own additions, not built
+     * speculatively here (Sprint 4.3 Technical Specification §11).
+     */
+    public function reactivate(): void
+    {
+        if ($this->lifecycle_status === self::STATUS_ACTIVE) {
+            return;
+        }
+
+        $this->lifecycle_status = self::STATUS_ACTIVE;
+        $this->save();
+
+        // DB::afterCommit(), matching StudentEnrolled's own dispatch
+        // discipline (Sprint 4.3 Technical Specification §10) -- not a
+        // no-op if called outside a transaction, Laravel runs the
+        // callback immediately in that case.
+        DB::afterCommit(function (): void {
+            StudentReactivated::dispatch($this);
+        });
     }
 
     /**
@@ -105,7 +145,7 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['lifecycle_status'])
+            ->logOnly(['lifecycle_status', 'current_enrollment_id'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

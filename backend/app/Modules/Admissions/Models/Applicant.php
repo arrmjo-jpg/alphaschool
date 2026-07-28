@@ -9,6 +9,7 @@ use App\Core\Models\ReasonCode;
 use App\Core\ValueObjects\ReassignmentImpact;
 use App\Modules\Academic\Models\GradeLevel;
 use App\Modules\Admissions\Events\ApplicantAccepted;
+use App\Modules\Admissions\Events\ApplicantConverted;
 use App\Modules\Admissions\Events\ApplicantMovedToReview;
 use App\Modules\Admissions\Events\ApplicantRejected;
 use App\Modules\Admissions\Events\ApplicantTested;
@@ -17,12 +18,14 @@ use App\Modules\Admissions\Exceptions\InvalidRejectionReasonException;
 use App\Modules\Identity\Models\Branch;
 use App\Modules\People\Models\Guardian;
 use App\Modules\People\Models\Person;
+use App\Modules\People\Models\Student;
 use Database\Factories\ApplicantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -63,6 +66,17 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
 
     public const STATUS_WITHDRAWN = 'withdrawn';
 
+    public const STATUS_CONVERTED = 'converted';
+
+    // Deliberately unchanged from Sprint 4.2 (already tagged
+    // v1.3-admissions-applicant) -- STATUS_ACCEPTED stays terminal here,
+    // so withdraw()/reject() continue to no-op against an accepted
+    // Applicant exactly as before. convert() below uses its own
+    // precise state check instead of isTerminal(), matching
+    // moveToReview()/markTested()'s existing pattern, not this one --
+    // adding STATUS_CONVERTED here would silently change already-frozen
+    // behavior (an accepted Applicant would become withdrawable, which
+    // it currently is not, per an existing Sprint 4.2 test).
     private const TERMINAL_STATUSES = [self::STATUS_ACCEPTED, self::STATUS_REJECTED, self::STATUS_WITHDRAWN];
 
     /**
@@ -76,7 +90,18 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
         'person_id', 'submitted_by_guardian_id', 'branch_id',
         'academic_year_id', 'applied_for_grade_level_id',
         'application_number', 'status', 'rejection_reason_code_id',
+        'converted_at', 'fee_amount', 'fee_paid', 'fee_paid_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'converted_at' => 'datetime',
+            'fee_amount' => 'decimal:2',
+            'fee_paid' => 'boolean',
+            'fee_paid_at' => 'datetime',
+        ];
+    }
 
     protected static function newFactory(): ApplicantFactory
     {
@@ -116,6 +141,17 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
     public function assessments(): HasMany
     {
         return $this->hasMany(AdmissionAssessment::class);
+    }
+
+    /**
+     * Derived, not a stored FK/BelongsTo relation -- Sprint 4.3
+     * Technical Specification's own noted trade-off. The resulting
+     * Student is found by this Applicant's own person_id, the same
+     * identity ConvertApplicantToStudentAction resolves against.
+     */
+    public function student(): ?Student
+    {
+        return Student::where('person_id', $this->person_id)->first();
     }
 
     public function isTerminal(): bool
@@ -255,6 +291,40 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
         $this->save();
 
         ApplicantWithdrawn::dispatch($this);
+    }
+
+    /**
+     * A precise state check, not isTerminal() -- only STATUS_ACCEPTED
+     * may convert, matching moveToReview()/markTested()'s existing
+     * pattern (a single required prior state) rather than accept()/
+     * reject()/withdraw()'s broader "not already decided" check. Called
+     * by ConvertApplicantToStudentAction only after its own upfront
+     * accepted/not-already-converted check already passed -- this is a
+     * defensive backstop, not the primary enforcement point (see Sprint
+     * 4.3 Technical Specification §9).
+     *
+     * Unlike accept()/reject()/withdraw()/moveToReview()/markTested(),
+     * convert() is always called from inside
+     * ConvertApplicantToStudentAction's open DB::transaction() (ADR-0026,
+     * Independent Review Finding 2) -- DB::afterCommit() here, matching
+     * Student::reactivate()'s own discipline, so the event is deferred
+     * whether convert() runs inside that transaction or, in principle,
+     * standalone (Laravel runs the callback immediately if no
+     * transaction is open).
+     */
+    public function convert(): void
+    {
+        if ($this->status !== self::STATUS_ACCEPTED) {
+            return;
+        }
+
+        $this->status = self::STATUS_CONVERTED;
+        $this->converted_at = now();
+        $this->save();
+
+        DB::afterCommit(function (): void {
+            ApplicantConverted::dispatch($this);
+        });
     }
 
     public function getActivitylogOptions(): LogOptions

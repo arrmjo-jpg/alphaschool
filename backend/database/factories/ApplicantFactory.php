@@ -47,4 +47,29 @@ class ApplicantFactory extends Factory
     {
         return $this->state(fn (array $attributes) => ['status' => Applicant::STATUS_ACCEPTED]);
     }
+
+    public function converted(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => Applicant::STATUS_CONVERTED,
+            'converted_at' => now(),
+        ]);
+    }
+
+    public function feePaid(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'fee_amount' => 500,
+            'fee_paid' => true,
+            'fee_paid_at' => now(),
+        ]);
+    }
+
+    public function feeUnpaid(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'fee_amount' => 500,
+            'fee_paid' => false,
+        ]);
+    }
 }

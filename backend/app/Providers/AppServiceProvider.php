@@ -8,8 +8,10 @@ use App\Modules\Academic\Models\AcademicYear;
 use App\Modules\Academic\Policies\AcademicYearPolicy;
 use App\Modules\Administration\Support\ApprovalRoutingResolver as AdministrationApprovalRoutingResolver;
 use App\Modules\Administration\Support\SingleRoleApprovalRoutingResolver as AdministrationSingleRoleApprovalRoutingResolver;
+use App\Modules\Admissions\Contracts\Billable;
 use App\Modules\Admissions\Models\Applicant;
 use App\Modules\Admissions\Policies\ApplicantPolicy;
+use App\Modules\Admissions\Services\ApplicantFeeBillable;
 use App\Modules\Identity\Contracts\StepUpAuthentication;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\StepUpAuthenticationService;
@@ -56,6 +58,12 @@ class AppServiceProvider extends ServiceProvider
         // this binding is the wiring that makes it resolvable, not a
         // new architectural decision.
         $this->app->bind(StepUpAuthentication::class, StepUpAuthenticationService::class);
+
+        // Sprint 4.3 -- the fee-payment check ConvertApplicantToStudentAction
+        // depends on. Bound to the Admissions-native implementation (the fee
+        // is an Admissions-domain fact); People consumes it only through
+        // this interface, never Applicant's fee columns directly.
+        $this->app->bind(Billable::class, ApplicantFeeBillable::class);
     }
 
     /**
