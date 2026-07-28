@@ -8,6 +8,7 @@ use App\Modules\Academic\Exceptions\ClosedAcademicYearException;
 use App\Modules\Academic\Exceptions\NoNextGradeLevelException;
 use App\Modules\Academic\Exceptions\NotAtFinalGradeLevelException;
 use App\Modules\Academic\Models\AcademicYear;
+use App\Modules\Academic\Models\BranchGradeLevel;
 use App\Modules\Academic\Models\GradeLevel;
 use App\Modules\Identity\Models\Branch;
 use App\Modules\People\Events\EnrollmentGraduated;
@@ -48,13 +49,24 @@ function activeEnrollmentAt(int $sequenceOrder): Enrollment
     return $enrollment;
 }
 
+/**
+ * Independent Review Finding 1 -- nextGradeLevelForBranch()/
+ * isFinalGradeLevelForBranch() are branch-scoped, so a GradeLevel must
+ * have a real BranchGradeLevel row for a given branch before promotion/
+ * graduation logic will recognize it as available there.
+ */
+function offerGradeAtBranch(int $branchId, GradeLevel $gradeLevel): void
+{
+    BranchGradeLevel::factory()->create(['branch_id' => $branchId, 'grade_level_id' => $gradeLevel->id]);
+}
+
 // --- Promotion ---------------------------------------------------------
 
 it('promotes an active Enrollment into a new one at the next grade level', function () {
     Event::fake([EnrollmentPromoted::class]);
 
     $current = activeEnrollmentAt(500);
-    GradeLevel::factory()->create(['sequence_order' => 501]);
+    offerGradeAtBranch($current->branch_id, GradeLevel::factory()->create(['sequence_order' => 501]));
     $nextYear = AcademicYear::factory()->active()->create();
 
     $next = app(PromoteEnrollmentAction::class)->execute($current, $nextYear->id);
@@ -84,6 +96,27 @@ it('refuses to promote when there is no next grade level in sequence', function 
     expect($current->fresh()->status)->toBe(Enrollment::STATUS_ACTIVE);
 });
 
+/**
+ * Independent Review Finding 1 regression test -- a higher-sequence
+ * GradeLevel exists globally, but this Enrollment's own branch has no
+ * BranchGradeLevel row offering it. Before the fix,
+ * AcademicCatalogService::nextGradeLevel() ignored BranchGradeLevel
+ * entirely and would have let this promotion succeed, creating an
+ * Enrollment at a grade the branch doesn't actually teach.
+ */
+it('refuses to promote when the next grade level exists globally but is not offered at this Enrollment\'s branch', function () {
+    $current = activeEnrollmentAt(995);
+    // Deliberately no offerGradeAtBranch() call -- this GradeLevel
+    // exists, just not at $current->branch_id.
+    GradeLevel::factory()->create(['sequence_order' => 996]);
+    $nextYear = AcademicYear::factory()->active()->create();
+
+    expect(fn () => app(PromoteEnrollmentAction::class)->execute($current, $nextYear->id))
+        ->toThrow(NoNextGradeLevelException::class);
+
+    expect($current->fresh()->status)->toBe(Enrollment::STATUS_ACTIVE);
+});
+
 it('refuses to promote into a closed Academic Year', function () {
     $current = activeEnrollmentAt(510);
     GradeLevel::factory()->create(['sequence_order' => 511]);
@@ -101,7 +134,7 @@ it('promotes an Enrollment whose own Academic Year has already closed -- the nor
     $branch = Branch::factory()->create();
     $closedYear = AcademicYear::factory()->closed()->create();
     $gradeLevel = GradeLevel::factory()->create(['sequence_order' => 520]);
-    GradeLevel::factory()->create(['sequence_order' => 521]);
+    offerGradeAtBranch($branch->id, GradeLevel::factory()->create(['sequence_order' => 521]));
 
     $current = Enrollment::factory()->create([
         'branch_id' => $branch->id,
@@ -120,7 +153,7 @@ it('promotes an Enrollment whose own Academic Year has already closed -- the nor
 
 it('refuses to promote an Enrollment that is not active', function () {
     $current = activeEnrollmentAt(530);
-    GradeLevel::factory()->create(['sequence_order' => 531]);
+    offerGradeAtBranch($current->branch_id, GradeLevel::factory()->create(['sequence_order' => 531]));
     $nextYear = AcademicYear::factory()->active()->create();
     app(PromoteEnrollmentAction::class)->execute($current, $nextYear->id);
 
@@ -203,14 +236,36 @@ it('graduates an active Enrollment at the final grade level, and its Student tog
     Event::assertDispatched(StudentGraduated::class, fn ($event) => $event->student->is($student));
 });
 
-it('refuses to graduate from a grade level that is not the final one', function () {
+it('refuses to graduate from a grade level that is not the final one at this branch', function () {
     $current = activeEnrollmentAt(590);
-    GradeLevel::factory()->create(['sequence_order' => 591]);
+    offerGradeAtBranch($current->branch_id, GradeLevel::factory()->create(['sequence_order' => 591]));
 
     expect(fn () => app(GraduateEnrollmentAction::class)->execute($current))
         ->toThrow(NotAtFinalGradeLevelException::class);
 
     expect($current->fresh()->status)->toBe(Enrollment::STATUS_ACTIVE);
+});
+
+/**
+ * Independent Review Finding 1 regression test -- a higher-sequence
+ * GradeLevel exists globally (at a different branch), but this
+ * Enrollment's own branch offers nothing beyond its current grade.
+ * Before the fix, AcademicCatalogService::isFinalGradeLevel() ignored
+ * BranchGradeLevel entirely and would have wrongly refused this
+ * graduation, since a higher grade existed *somewhere* in the system.
+ */
+it('graduates successfully at the last grade this branch offers, even though a higher grade exists globally', function () {
+    Event::fake([EnrollmentGraduated::class, StudentGraduated::class]);
+
+    $current = activeEnrollmentAt(595);
+    // Exists globally, at a different branch -- not offered at
+    // $current->branch_id.
+    $otherBranch = Branch::factory()->create();
+    offerGradeAtBranch($otherBranch->id, GradeLevel::factory()->create(['sequence_order' => 596]));
+
+    app(GraduateEnrollmentAction::class)->execute($current);
+
+    expect($current->fresh()->status)->toBe(Enrollment::STATUS_GRADUATED);
 });
 
 it('refuses to graduate an Enrollment that is not active', function () {
@@ -230,8 +285,8 @@ it('refuses to graduate an Enrollment that is not active', function () {
  */
 it('produces a clean, non-branching chain across multiple promotions', function () {
     $first = activeEnrollmentAt(700);
-    GradeLevel::factory()->create(['sequence_order' => 701]);
-    GradeLevel::factory()->create(['sequence_order' => 702]);
+    offerGradeAtBranch($first->branch_id, GradeLevel::factory()->create(['sequence_order' => 701]));
+    offerGradeAtBranch($first->branch_id, GradeLevel::factory()->create(['sequence_order' => 702]));
     $yearTwo = AcademicYear::factory()->active()->create();
     $yearThree = AcademicYear::factory()->active()->create();
 

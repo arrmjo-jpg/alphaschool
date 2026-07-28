@@ -73,27 +73,43 @@ class AcademicCatalogService
     }
 
     /**
-     * Sprint 4.4 -- the sole source of truth for grade progression order
-     * (`sequence_order`), consumed by Academic's own promotion/
-     * graduation Actions. Never exposed to People: Enrollment/Student
-     * accept only the resulting ID, never a GradeLevel instance
-     * (ADR-0026's layering rule -- Foundation must not depend on
-     * Domain).
+     * Sprint 4.4 -- the sole source of truth for grade progression,
+     * consumed by Academic's own promotion/graduation Actions. Never
+     * exposed to People: Enrollment/Student accept only the resulting
+     * ID, never a GradeLevel instance (ADR-0026's layering rule --
+     * Foundation must not depend on Domain).
+     *
+     * Named *ForBranch* deliberately (Independent Review Finding 1,
+     * 2026-07-27) -- an earlier version of this method computed "next
+     * grade" globally by sequence_order alone, ignoring
+     * BranchGradeLevel entirely. That let Promotion create an
+     * Enrollment at a grade the branch doesn't actually offer, and let
+     * Graduation be wrongly refused for a student who completed the
+     * last grade their own branch offers, just because a higher grade
+     * exists at a *different* branch. Scoped through the same
+     * BranchGradeLevel join gradeLevelsForBranch() already uses, so
+     * "next"/"final" always means "next/final among what this branch
+     * offers," never system-wide -- the method name itself is meant to
+     * make that unmistakable to a future caller, not just this
+     * docblock.
      */
-    public function nextGradeLevel(int $currentGradeLevelId): ?GradeLevel
+    public function nextGradeLevelForBranch(int $branchId, int $currentGradeLevelId): ?GradeLevel
     {
         $current = GradeLevel::findOrFail($currentGradeLevelId);
 
         return GradeLevel::query()
             ->active()
+            ->whereHas('branches', function ($query) use ($branchId): void {
+                $query->where('branches.id', $branchId)->where('branch_grade_levels.is_active', true);
+            })
             ->where('sequence_order', '>', $current->sequence_order)
             ->orderBy('sequence_order')
             ->first();
     }
 
-    public function isFinalGradeLevel(int $gradeLevelId): bool
+    public function isFinalGradeLevelForBranch(int $branchId, int $gradeLevelId): bool
     {
-        return $this->nextGradeLevel($gradeLevelId) === null;
+        return $this->nextGradeLevelForBranch($branchId, $gradeLevelId) === null;
     }
 
     /**

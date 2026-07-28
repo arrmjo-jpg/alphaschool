@@ -46,9 +46,23 @@ class PromoteEnrollmentAction
 
             $this->academicCatalogService->assertAcademicYearIsOpen($nextAcademicYearId);
 
-            $nextGradeLevel = $this->academicCatalogService->nextGradeLevel($locked->grade_level_id);
+            // Branch-scoped (Independent Review Finding 1) -- "next
+            // grade" means "next grade this Enrollment's own branch
+            // offers," never a system-wide next grade the branch
+            // doesn't teach. Enrollment::promote() keeps branch_id
+            // unchanged from $locked, so the resolved grade must be
+            // valid for that same branch.
+            $nextGradeLevel = $this->academicCatalogService->nextGradeLevelForBranch($locked->branch_id, $locked->grade_level_id);
 
             if ($nextGradeLevel === null) {
+                // Deliberately the same exception whether the reason is
+                // "no higher grade exists at all" or "a higher grade
+                // exists, just not at this branch" -- from the Action's
+                // own perspective the outcome is identical: promotion
+                // cannot proceed. A more specific exception can be
+                // added later if a real consumer (a different UI
+                // message, a distinct admin report) needs to tell the
+                // two apart; none does today.
                 throw new NoNextGradeLevelException(GradeLevel::findOrFail($locked->grade_level_id));
             }
 
