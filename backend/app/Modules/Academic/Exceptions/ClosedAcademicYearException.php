@@ -6,12 +6,12 @@ use App\Modules\Academic\Models\AcademicYear;
 use RuntimeException;
 
 /**
- * Raised by ClosedAcademicYearGuard::assert() -- the single, shared
- * enforcement of "no new/modified records against a closed Academic
- * Year" every future consumer (Applicant, Enrollment, ...) must call
- * before persisting a record scoped to an Academic Year. Carries the
- * year's public_id/name so a caller several layers removed from this
- * guard can diagnose the failure without a second query.
+ * Raised by AcademicPeriodGuard::assertAcademicYearIsOpen() -- the
+ * single, shared enforcement of "no new/modified records against a
+ * closed Academic Year" every future consumer (Applicant, Enrollment,
+ * ...) must call before persisting a record scoped to an Academic Year.
+ * Carries the year's public_id/name so a caller several layers removed
+ * from this guard can diagnose the failure without a second query.
  */
 class ClosedAcademicYearException extends RuntimeException
 {

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * instance.
  *
  * Only the TARGET academic year is checked against
- * ClosedAcademicYearGuard, never the closing Enrollment's own
+ * AcademicPeriodGuard, never the closing Enrollment's own
  * academic_year_id -- that guard exists to stop new commitments against
  * a closed year, not to freeze a historical record's own terminal
  * status transition, which is an outcome of that year ending, not a new

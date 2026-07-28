@@ -5,7 +5,7 @@ namespace App\Modules\Academic\Services;
 use App\Modules\Academic\Exceptions\NoActiveAcademicYearException;
 use App\Modules\Academic\Models\AcademicYear;
 use App\Modules\Academic\Models\GradeLevel;
-use App\Modules\Academic\Support\ClosedAcademicYearGuard;
+use App\Modules\Academic\Support\AcademicPeriodGuard;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,7 +26,7 @@ class AcademicCatalogService
 
     private const ACTIVE_YEAR_CACHE_TTL_SECONDS = 300;
 
-    public function __construct(private readonly ClosedAcademicYearGuard $closedAcademicYearGuard) {}
+    public function __construct(private readonly AcademicPeriodGuard $academicPeriodGuard) {}
 
     /**
      * The single highest-traffic read this sprint produces -- every
@@ -69,7 +69,21 @@ class AcademicCatalogService
 
     public function assertAcademicYearIsOpen(int $academicYearId): void
     {
-        $this->closedAcademicYearGuard->assert($academicYearId);
+        $this->academicPeriodGuard->assertAcademicYearIsOpen($academicYearId);
+    }
+
+    /**
+     * Term's own sibling to assertAcademicYearIsOpen() -- consumed by
+     * SubjectOffering's own creation path. AcademicPeriodGuard is
+     * injected here rather than SubjectOffering owning a second,
+     * independent instance of the same guard, matching how every other
+     * closed-period check in this codebase routes through this service
+     * rather than a sibling module reaching into Academic\Support
+     * directly (this class's own docblock boundary rule).
+     */
+    public function assertTermIsOpen(int $termId): void
+    {
+        $this->academicPeriodGuard->assertTermIsOpen($termId);
     }
 
     /**

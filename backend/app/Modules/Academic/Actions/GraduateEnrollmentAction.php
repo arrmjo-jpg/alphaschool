@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Review Finding 1 -- a global-only check would wrongly refuse
  * graduation for a student who completed the last grade their own
  * branch teaches, just because a higher grade exists elsewhere). No
- * ClosedAcademicYearGuard check, same reasoning as
+ * AcademicPeriodGuard check, same reasoning as
  * WithdrawEnrollmentAction.
  */
 class GraduateEnrollmentAction

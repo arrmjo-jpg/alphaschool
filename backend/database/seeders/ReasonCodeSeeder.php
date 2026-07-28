@@ -89,5 +89,23 @@ class ReasonCodeSeeder extends Seeder
                 ['label' => $reason['label'], 'is_active' => true],
             );
         }
+
+        // Subject Offering + Timetables Architecture Pass --
+        // TeacherAssignment's own closeAssignment()/cancelAssignment()
+        // context, seeded now for the same reason section_assignment/
+        // homeroom_teacher_assignment were: both inherited
+        // HasTemporalAssignment methods are directly callable and
+        // tested this sprint.
+        $subjectTeacherAssignmentReasons = [
+            ['code' => 'teacher_reassigned', 'label' => ['en' => 'Teacher reassigned to a different subject offering', 'ar' => 'تم نقل المعلم إلى مادة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($subjectTeacherAssignmentReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'subject_teacher_assignment', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
     }
 }

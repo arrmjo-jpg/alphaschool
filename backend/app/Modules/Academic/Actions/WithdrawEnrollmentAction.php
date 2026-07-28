@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * Lives in Academic for consistency with the other three transition
  * Actions (ADR-0026, Sprint 4.4 Layering Review), though it needs no
  * Academic-side lookup of its own -- withdrawal is purely a People-side
- * fact (Enrollment/Student both closing out). No ClosedAcademicYearGuard
+ * fact (Enrollment/Student both closing out). No AcademicPeriodGuard
  * check: withdrawal records that an enrollment ended, it doesn't commit
  * anything new against the enrollment's academic year, so the guard's
  * "no new commitments against a closed year" purpose doesn't apply here
