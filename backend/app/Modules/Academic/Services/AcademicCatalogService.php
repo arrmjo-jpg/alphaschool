@@ -73,6 +73,30 @@ class AcademicCatalogService
     }
 
     /**
+     * Sprint 4.4 -- the sole source of truth for grade progression order
+     * (`sequence_order`), consumed by Academic's own promotion/
+     * graduation Actions. Never exposed to People: Enrollment/Student
+     * accept only the resulting ID, never a GradeLevel instance
+     * (ADR-0026's layering rule -- Foundation must not depend on
+     * Domain).
+     */
+    public function nextGradeLevel(int $currentGradeLevelId): ?GradeLevel
+    {
+        $current = GradeLevel::findOrFail($currentGradeLevelId);
+
+        return GradeLevel::query()
+            ->active()
+            ->where('sequence_order', '>', $current->sequence_order)
+            ->orderBy('sequence_order')
+            ->first();
+    }
+
+    public function isFinalGradeLevel(int $gradeLevelId): bool
+    {
+        return $this->nextGradeLevel($gradeLevelId) === null;
+    }
+
+    /**
      * Called by InvalidateActiveAcademicYearCache in response to
      * AcademicYearClosed -- the model itself stays unaware this service
      * or its cache exist, matching Person's own style of not knowing

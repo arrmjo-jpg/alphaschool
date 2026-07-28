@@ -6,7 +6,10 @@ use App\Core\Concerns\HasPublicId;
 use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\ValueObjects\ReassignmentImpact;
+use App\Modules\People\Events\StudentGraduated;
 use App\Modules\People\Events\StudentReactivated;
+use App\Modules\People\Events\StudentWithdrawn;
+use App\Modules\People\Exceptions\StudentNotActiveException;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -71,10 +74,11 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
      * The Return-case reactivation (Sprint 4.3 Technical Specification
      * §6/§11) -- transitions from STATUS_WITHDRAWN or STATUS_GRADUATED
      * back to STATUS_ACTIVE. No-op if already active, matching this
-     * Phase's established idempotency convention. The only
-     * lifecycle_status-transitioning method this sprint adds --
-     * withdraw()/graduate() are Sprint 4.4's own additions, not built
-     * speculatively here (Sprint 4.3 Technical Specification §11).
+     * Phase's established idempotency convention. withdraw()/graduate()
+     * below are Sprint 4.4's own additions -- unlike reactivate()'s
+     * no-op, both throw on an already-non-active Student, matching the
+     * terminal-state discipline Sprint 4.4's Architecture Pass
+     * explicitly requires for Enrollment's own equivalent transitions.
      */
     public function reactivate(): void
     {
@@ -91,6 +95,47 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
         // callback immediately in that case.
         DB::afterCommit(function (): void {
             StudentReactivated::dispatch($this);
+        });
+    }
+
+    /**
+     * Sprint 4.4 -- called by Academic's WithdrawEnrollmentAction
+     * alongside the current Enrollment's own withdraw(). Throws rather
+     * than no-ops (StudentNotActiveException) -- in practice this is
+     * always already prevented by the calling Action's prior
+     * EnrollmentNotActiveException check, since Student and its current
+     * Enrollment transition together; this guard exists so Student's
+     * own contract doesn't solely rely on every future caller getting
+     * that ordering right.
+     */
+    public function withdraw(): void
+    {
+        if ($this->lifecycle_status !== self::STATUS_ACTIVE) {
+            throw new StudentNotActiveException($this, 'withdraw');
+        }
+
+        $this->lifecycle_status = self::STATUS_WITHDRAWN;
+        $this->save();
+
+        DB::afterCommit(function (): void {
+            StudentWithdrawn::dispatch($this);
+        });
+    }
+
+    /**
+     * Mirrors withdraw() exactly, called by GraduateEnrollmentAction.
+     */
+    public function graduate(): void
+    {
+        if ($this->lifecycle_status !== self::STATUS_ACTIVE) {
+            throw new StudentNotActiveException($this, 'graduate');
+        }
+
+        $this->lifecycle_status = self::STATUS_GRADUATED;
+        $this->save();
+
+        DB::afterCommit(function (): void {
+            StudentGraduated::dispatch($this);
         });
     }
 
