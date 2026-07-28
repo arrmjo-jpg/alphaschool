@@ -670,6 +670,8 @@ Deliberately postponed, with the reasoning that makes it a decision rather than 
 
 ## High-Priority Core Architecture Backlog
 
+**RESOLVED (Phase 5, Sprint A0, 2026-07-28)** — see the Sprint A0 entry below for the full closure. The two items are kept here, struck through in spirit but left in place verbatim, as the historical record of what was found, why it was deliberately not patched locally, and what the fix needed to look like — exactly the discipline this section's own opening paragraph asks for.
+
 Unlike the Technical Debt Register above (deliberately postponed, low-urgency items), the two entries below are promoted to their own section deliberately — both are real, found-in-production-code gaps in `App\Core\Concerns\HasTemporalAssignment` (Sprint 1.1, frozen), surfaced only once `guardian_student` (Sprint 2.5 Step 2) became the trait's first real consumer. Neither was patched locally in `guardian_student` on purpose: a single consumer working around a shared Core trait's own gap would leave every future consumer (Enrollment, Employment, and every other Assignment-pattern table named in §7) to rediscover and re-fix the identical problem independently — the same reasoning already applied to the `Branch`/`Role`/`ReasonCode` deletion-guard gaps, but higher priority here because both affect data-integrity guarantees the trait's own contract already claims to provide.
 
 **Task: `HasTemporalAssignment` concurrency safety + date-boundary normalization (Core, Sprint 1.1 infrastructure — not Sprint 2.5).**
@@ -679,6 +681,21 @@ Unlike the Technical Debt Register above (deliberately postponed, low-urgency it
 3. **Sequencing:** implement both together — they touch the same `saving()` hook and the same trait, and splitting them into two separate changes risks two separate migrations/reviews of the identical code path.
 4. **Cleanup:** once the Core fix ships, remove `GuardianStudent`'s local `setEffectiveFromAttribute`/`setEffectiveUntilAttribute` mutators — they become redundant, and leaving them in place after the trait guarantees the same thing centrally would silently mask whether the Core fix actually covers this model too.
 5. **Proof standard:** both must be proven the same way `NumberGeneratorService`'s concurrency safety was — a genuine dual-connection/dual-process test, not a sequential-loop stand-in — plus a test proving a same-day, post-midnight-created row is correctly included in `active()`/`asOf(today())`.
+
+### Phase 5, Sprint A0 — `HasTemporalAssignment` hardening (prerequisite to Sections)
+
+**Goal:** close both items above before `SectionAssignment`/`HomeroomAssignment` (Phase 5's own Sprint A) become the trait's second and third real consumers — elevated from "open question" to an explicit prerequisite gate during Phase 5's own architecture review, on the reasoning that building two more consumers atop a known-flawed shared foundation would repeat the exact category of mistake Sprint 4.3's own module-placement error was, one level down in the stack.
+
+**Delivered exactly per the backlog's own specified fix shape, both items together (per its own sequencing note):**
+
+1. **Concurrency safety.** `HasTemporalAssignment::save()` is now overridden to wrap the whole operation — competitor lookup, overlap check, and the actual persist — in one `DB::transaction()`; `guardAgainstOverlap()`'s competitor query now holds `lockForUpdate()` scoped to `temporalScopeAttributes()` for the transaction's duration. This closes the race for two concurrent saves competing over a scope where at least one competitor row already exists. **Disclosed, not silently left open:** row locking cannot protect a scope with zero prior rows — two concurrent *first-ever* creates for a brand-new scope have nothing to lock. Not exploitable by a caller that already locks a real, always-existing anchor row first (every Action in this codebase already does — `ConvertApplicantToStudentAction` locks `Applicant`, the Sprint 4.4 Enrollment transition Actions lock `Enrollment`), but a caller that doesn't is not protected by the trait alone. A DB-level exclusion constraint would close this fully; not built now, since no consumer has forced the question (promotion, not prediction) — recorded here rather than silently assumed away.
+2. **Date-boundary normalization.** `setEffectiveFromAttribute()`/`setEffectiveUntilAttribute()` moved from `GuardianStudent`'s own local stopgap directly into the trait — any future consumer inherits day-boundary normalization automatically, with nothing left to independently rediscover.
+3. **Cleanup performed:** `GuardianStudent`'s local copies of both mutators removed, along with its own "KNOWN LIMITATION" docblock paragraph (now inaccurate — the limitation it described is fixed).
+4. **Proof standard met:** a genuine dual-connection MariaDB concurrency test (`tests/Feature/Core/HasTemporalAssignmentConcurrencyTest.php`, exercised through `guardian_student` — the trait's real table — matching `NumberGeneratorConcurrencyTest.php`'s established pattern exactly) proves the row lock; two normalization tests (`tests/Feature/Core/HasTemporalAssignmentNormalizationTest.php`) prove the raw stored value is day-boundary-normalized (read directly via the query builder, bypassing Eloquent's own cast/accessor) and that a same-day, post-midnight-created row is correctly included in `active()`/`asOf(today())`.
+
+**Verified:** 435/435 tests (3 new: 1 concurrency + 2 normalization), Pint clean, PHPStan zero new errors (187, identical baseline — the one `HasTemporalAssignment.php` finding PHPStan reports, `guardAgainstOverlap()` called on a `Model`-typed closure parameter, is pre-existing, unchanged code, not introduced by this fix), `deptrac analyse --no-cache` zero violations (Core remains domain-agnostic — nothing here imports Foundation or Domain).
+
+**Git Milestone:** `v1.6-temporal-assignment-hardening`
 
 ---
 
