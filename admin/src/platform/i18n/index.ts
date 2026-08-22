@@ -2,6 +2,8 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import shellEn from '@/platform/i18n/locales/en/shell.json'
 import shellAr from '@/platform/i18n/locales/ar/shell.json'
+import entityWorkspaceEn from '@/platform/entity-workspace/locales/en.json'
+import entityWorkspaceAr from '@/platform/entity-workspace/locales/ar.json'
 
 export const RTL_LOCALES = ['ar']
 
@@ -14,8 +16,8 @@ const initialLocale = localStorage.getItem('admin-platform-locale') ?? 'en'
 
 i18n.use(initReactI18next).init({
   resources: {
-    en: { shell: shellEn },
-    ar: { shell: shellAr },
+    en: { shell: shellEn, 'entity-workspace': entityWorkspaceEn },
+    ar: { shell: shellAr, 'entity-workspace': entityWorkspaceAr },
   },
   lng: initialLocale,
   fallbackLng: 'en',

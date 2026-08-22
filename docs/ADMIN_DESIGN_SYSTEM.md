@@ -384,6 +384,16 @@ System                                       (flat)
 - **Tooltip-on-hover when collapsed** — every collapsed-rail icon gets a Radix tooltip with the item's label; this is currently missing from New Admin's `SideNav` even in its flat form (§5) and should be added regardless of the grouping work.
 - **Permission-gated at the item level**, not just the workspace level — Old Admin filters individual nav items by permission before deciding whether to render their parent group at all (a group with zero visible children renders nothing, not an empty header). New Admin's `useVisibleWorkspaces` already does the workspace-level equivalent (server-computed access); the same discipline should extend to sub-items within a grouped workspace's own internal navigation once built.
 
+### 8.5 Workspace-Internal State: URL, Not Local State (binding, added 2026-07-30)
+
+**Rule.** Any workspace-internal state that identifies a navigable resource — which record is selected, which category/tab is open, whether the page is in a list/detail/edit mode — lives in the URL (a real route, `useParams`/`useSearch`), never in local component state (`useState`) alone. Local `useState` is permitted only for state that is *not* itself a distinct, nameable place a user would reasonably expect to link to, share, refresh into, or navigate back out of (form-field drafts, a hover/focus flag, an open/closed dropdown).
+
+**Why this is a rule, not a one-off Academic decision.** Surfaced during UI Sprint 1-A's implementation (§28.16): `router.tsx` originally exposed exactly one route per workspace (`/w/$workspaceKey`), and both existing implemented workspaces — Configuration Platform (§26.3) and Provider Registry (§27.3) — navigate their own List↔Detail step (category rail → settings form; Overview Grid → provider form) via local `useState`, never the URL. This was never a deliberate design decision recorded anywhere — it was simply what shipped before any workspace's own internal state needed to survive a refresh or be shared. It also directly contradicts §7.1's own original, already-frozen praise for Old Admin's List Template ("page state lives in the URL — good, deep-linkable, refresh-safe"), which neither of the two shipped workspaces actually implements. Left undocumented, a third and fourth workspace would very plausibly repeat the local-state shortcut simply because it's what the two existing precedents show — exactly the "two navigation patterns coexisting with no one deciding between them" outcome this section exists to prevent.
+
+**What changed to support this.** `router.tsx`'s single `/w/$workspaceKey` route is now a parent with two children — an index route (`/`) and a splat route (`$`) capturing everything past the workspace root — registered once, generically, for every workspace (ADR-0015 Decision 4's "this file never changes when a workspace is added" invariant, unchanged). A new `useWorkspaceSubPath()` context (`platform/navigation/workspace-sub-path.ts`) threads the splat value down; a workspace that never calls it is entirely unaffected. §28.3/§28.15 (Entity List/Detail/Form, the Flat Tab Switcher) are this rule's first real consumer.
+
+**Status of the two existing exceptions.** Configuration Platform and Provider Registry are **not** retroactively migrated by this rule — that would be an unscoped rewrite of already-shipped, frozen work, not this section's job. Both are recorded here as a **known, disclosed gap against this rule** (added to `docs/IMPLEMENTATION_PLAYBOOK.md`'s own live Technical Debt Register — not this document's §17, which is a frozen, point-in-time analysis of Old Admin specifically, not a running New Admin debt list) rather than silently grandfathered in or forgotten: their own two-level List↔Detail step is not deep-linkable or refresh-safe today, and migrating them to the same index+splat shape §28 now uses is a legitimate, real future task — just not one bundled into UI Sprint 1-A's own scope.
+
 ---
 
 ## 9. UX Specification
@@ -1066,3 +1076,158 @@ Frozen design (2026-07-20), revised once during pre-freeze review the same day: 
 **Notable operational finding, unrelated to this design or its implementation:** during this phase's live-verification setup, the database was found completely empty (zero rows in every table, including `users`, `organizations`, `provider_registrations`) despite an intact, fully-migrated schema. No root cause was identified -- container recreation, config-caching, and a wrong-database mixup were each checked and ruled out. State was restored via `db:seed` plus the existing `administration:sync-settings`/`administration:sync-providers` commands before verification continued. This is flagged here for visibility since it was discovered mid-phase and has not yet been separately investigated or resolved.
 
 **Correction (2026-07-21):** the finding above and the "12 pre-existing failures" a few sentences earlier were the same root cause, not two separate findings, and it has since been found, reproduced live, and fixed -- `php artisan test` was silently connecting to the real MariaDB dev database instead of the isolated in-memory SQLite `phpunit.xml` declares, so every test run dropped and recreated every table (`RefreshDatabase`'s `migrate:fresh`) in the real dev database; the MariaDB-specific strict-mode column enforcement behind the 12 failures doesn't apply once tests correctly run against SQLite. Both statements above were accurate reports of what was known at the time of writing, not errors -- this note supersedes their conclusions, not their honesty. With the fix in place the full suite passes 367/367. Full RCA, live reproduction, and fix: `docs/developer/rca-2026-07-21-test-database-wipe.md`.
+
+---
+
+## 28. Academic Reference Workspace — Entity List, Detail & Form Pattern (Frozen 2026-07-30)
+
+Reached through a dedicated Architecture & UX Pass (`docs/IMPLEMENTATION_PLAYBOOK.md` Frontend Track F2, UI Sprint 1) grounded in direct inspection of the existing `admin/src/platform/` code and the real backend schema (`AcademicYear`/`Term`/`GradeLevel`/`Subject`/`Section` migrations) rather than assumption, then reviewed and closed with no substantive changes beyond two additions (§28.9's Capabilities Metadata, §28.7's Delete rule). This is the reference implementation for **entity-CRUD workspaces** specifically — the shape §26.1 explicitly deferred ("a different shape... need their own reference proof separately") when Administration Workspace proved the configuration-oriented shape instead. First consumer: the Academic workspace's five Master Data entities (`AcademicYear`, `Term`, `GradeLevel`, `Subject`, `Section`).
+
+### 28.1 Purpose and Scope
+
+Realizes §7's already-frozen List Template and Form Template — named as high-level shapes since the original design pass, never before turned into a concrete, implementable pattern — and adds a third sibling template, **Detail**, that §7 didn't originally name (closing §M8). Scope is the *pattern* itself: List/Detail/Form page shells, their shared components, and the declarative metadata contract that lets one pattern serve five structurally-different entities without per-entity branching. Binding Timetables/Attendance/Grades UI, or any `HasTemporalAssignment`-backed entity, is explicitly out of scope (§28.8 rule 7).
+
+### 28.2 Information Architecture and Navigation
+
+**Flat Tab Switcher, not Overview Grid.** The `Academic` workspace (§8.3, a flat top-level entry) renders a horizontal tab row directly under its `WorkspaceHeader` — Academic Years | Terms | Grade Levels | Subjects | Sections — each tab rendering that entity's List page. **Considered and rejected: reusing the Overview Grid Pattern (§26.16) as the workspace landing page**, on two grounds: (1) Overview Grid's status badge is semantically committed to configuration health (`Ready`/`Needs Setup`/`Error`/`Disabled`) with no honest equivalent for a plain Master Data catalog; (2) Overview Grid's documented intended use (§26.16's own table) is a *grid of structurally distinct capability areas* a user visits occasionally — Academic's five entities are structurally identical (same pattern) and visited constantly, which a tab switcher represents more honestly and with less navigation depth.
+
+The tab switcher is a workspace-internal concern, registered in a local config array owned by the Academic workspace — **not** a new global extension point, and not the same mechanism as §8.2's `WorkspaceDefinition.group` (which clusters distinct top-level workspaces under Administration; this clusters same-shape entity lists within one workspace). Breadcrumb: Home → Academic → [Entity plural] → [Create/Edit/Detail], via the existing multi-level `Breadcrumb`, unchanged.
+
+### 28.3 Page Templates — Three Independent Siblings
+
+**List → Detail → Form are three separate patterns, not one component with modes.** Navigation:
+
+```
+List  →  [row action]  →  Detail (read-only)  →  [Edit]  →  Form (edit)
+List  →  [New]  ─────────────────────────────────────────→  Form (create)
+```
+
+`EntityDetailPage` and `EntityFormPage` are independent patterns, not a wrapper/variant pair — Detail starts minimal (breadcrumb + read-only field values + Edit action) but is the designated future home for related-record panels, timelines, and statistics (§28.10) **without ever collapsing into a form**; keeping them separate now avoids a later component split under pressure. This closes §M8 (no read-only view distinct from edit existed anywhere in Old Admin) — a user holding `view` but not `edit` lands on a real Detail page with no Edit action rendered, never a disabled form.
+
+**Create/Edit is always a full page**, per §7.2's already-frozen Form Template — deliberately including entities as small as `AcademicYear` (4 fields). Not reopened for per-entity exceptions: a consistent pattern across all five entities was judged more valuable than saving one click on the smallest ones, and a size-based exception today invites unprincipled exceptions for every future entity someone judges "small enough."
+
+### 28.4 Entity List Pattern
+
+- **Toolbar:** `WorkspaceHeader` (title + primary "New [Entity]" action) + a search/filter row beneath it.
+- **Search:** a new list-scoped `SearchInput` (distinct from the global `SearchBar`), 350ms client debounce before writing to the URL querystring, server does the actual filtering, page resets to 1 on change.
+- **Filters:** one baseline **Status** filter, whose shape is declared per entity (§28.8 rule 5) — a boolean `Active/Inactive/All` control for `GradeLevel`/`Subject`/`Section` (real `is_active` columns, confirmed by migration), or a three-value `Upcoming/Active/Closed/All` control for `AcademicYear`/`Term` (real `status` enum, confirmed by migration — corrects an initial draft assumption that all five entities shared one boolean shape). A **"N filters active" indicator with one-click Clear All** is new, closing §1.2's documented Old Admin gap (no filter-count affordance, no clear-all).
+- **Table behavior:** the existing `DataTable`/`useServerDataTable` (`platform/data-table/`) is reused verbatim — server-side sort/pagination against a Laravel-shaped paginated resource, already generic, previously exercised only by the dev harness, never by a real workspace until this one. A trailing "…" `DropdownMenu` row-action column (reusing the existing primitive) offers View / Edit / **Deactivate or Close** (§28.7 — never Delete).
+- **Bulk actions / row selection:** explicitly out of Sprint 1's baseline. `DataTable`'s underlying TanStack Table already supports `enableRowSelection` if a real future need surfaces (per-entity, via §28.8's capabilities metadata) — not built speculatively now.
+- **Pagination:** upgraded from the current prev/next-only control to numbered-with-ellipsis, **in scope for Sprint 1** — a Foundation-level fix (§6.3's long-documented gap), not an Academic-specific feature, correctly landing before dozens of future screens start depending on the weaker version.
+- **Loading:** first load keeps the existing skeleton-row treatment; a refetch (filter/search/page change) dims existing content (`opacity-70`) rather than blanking or re-spinning — fixing a real, confirmed gap in `data-table.tsx` (it does not currently distinguish the two cases) against the already-frozen rule in §9 ("List pages never blank-and-reflow during a background refetch").
+- **Empty states, two distinct conditions:** zero rows because none exist yet ("No {Entities} yet" + a prominent create CTA) vs. zero rows because the current filter/search matched nothing ("No results match your filters" + Clear Filters) — different copy, different fix, matching §26.9's discipline of never collapsing distinct empty conditions into one generic message.
+- **Error state:** existing inline error text, extended with a **Retry** action — confirmed absent from `data-table.tsx` today, a small, disclosed addition to the same file.
+
+### 28.5 Entity Detail Pattern
+
+`EntityDetailPage`: breadcrumb → `WorkspaceHeader` (entity's display name/code as title) → read-only field values (same field set the Form declares, §28.8 rule 1, rendered as plain text/labels, not disabled inputs) → an Edit action, rendered only when `capabilities.canEdit` (§28.9) is true for the current user. No related-record panels, timelines, or statistics are built in Sprint 1 itself — the shell is guaranteed for all five entities now; per-entity content (e.g. an `AcademicYear` Detail page eventually listing its `Term`s) is added only once that consuming entity is itself built, per the same "promotion, not prediction" discipline already applied throughout this codebase (Blueprint Addendum B1) — not spec'd speculatively here.
+
+### 28.6 Entity Form Pattern
+
+- **Layout:** a single card-sectioned form (§7.2), sufficient for all five entities today (the largest, `Section`, has six fields including three FK selects); the shape already supports N sections with no pattern change if a future entity needs them.
+- **Bilingual fields:** `BilingualNameField` (existing, `platform/forms/`) reused verbatim wherever an entity declares `bilingual: true` (`AcademicYear`, `Term`, `GradeLevel`, `Subject` — all confirmed `name_en`/`name_ar` pairs by migration); `Section.name` is a single plain `TextField`, per its own already-decided, non-bilingual design (Phase 5 Sprint A: "expected values like 'A'/'B'/'1', not content needing translation") — the pattern follows this per-entity declaration, it does not impose bilinguality universally.
+- **Validation:** a Zod schema per entity (per the standing ADR-0023 Zod-First Contracts convention) + React Hook Form, inline `fieldState.error` display via the existing `TextField`/`SelectField`, and the existing `mapServerErrors` for 422s — unmodified.
+- **Consistency Invariants stay entirely server-side.** A `SubjectOffering`-style three-way mismatch (or any future cross-entity invariant) surfaces to the user as an ordinary 422 field/form-level error via the existing `mapServerErrors` — **no invariant logic is duplicated in React under any circumstance**, matching the backend's own discipline of enforcing every invariant exactly once, in `booted()`.
+- **Save/Cancel:** the existing `StickyActionBar` (Cancel → back to List; Save → submit), reused verbatim per §10/§26.5's precedent.
+- **Dirty-state handling — closes §M3.** Direct inspection of `platform/forms/` and `platform/routing/` confirmed no unsaved-changes guard exists anywhere in the codebase today — not even in Configuration Platform or Provider Registry, whose single-page save flows never previously created this risk the way List↔Form navigation now does. A new, generic `useUnsavedChangesGuard` (in `platform/forms/`, wired to `formState.isDirty`) is Sprint 1's first real implementation of the rule §9/§M3 specified since the original design pass.
+- **Success/error feedback — closes §M10.** No shared mutation wrapper guaranteeing a success toast exists today. A new generic `useEntityMutation` (wrapping React Query's `useMutation`) always fires an explicit success/error toast, removing the possibility of a future page author forgetting it.
+
+### 28.7 Domain Rule — Reference Master Data Never Exposes Delete
+
+**Reference Master Data entities never expose a Delete action in the UI, under any permission or role — this is a domain invariant, not a UI styling choice.** Every entity in this pattern's scope is already documented at the schema level as "reference/structural entity — never hard-deleted" (`academic_years`, `grade_levels`, `sections` migrations all carry this comment verbatim; the same convention applies to `subjects`/`terms`). The UI pattern's row-action menu offers only **View / Edit / Deactivate** (boolean-`status` entities) or **View / Edit / Close** (lifecycle-`status` entities, §28.8 rule 6) — no Delete affordance exists to gate behind a permission, because the backend has no delete path to call. Any future entity added to this pattern must declare which of the two applies (§28.8 rule 6); a genuinely deletable entity is a different category (transactional data, not Reference Master Data) and does not use this pattern's row-action set at all without a separate, explicit design decision.
+
+### 28.8 Declarative Entity Metadata — Extension Rules
+
+The pattern extends per entity through declared metadata consumed by shared components, never through per-entity branches (`if (entity === ...)`) inside them — the same discipline §27.5 already bound Provider Registry to ("the UI never branches on vendor identity, only on backend-declared metadata"), applied here to entity identity instead.
+
+1. **Fields.** Each entity declares a field-config array (name, type, component) driving the shared `EntityFormPage`'s render — the shell contains no per-entity field logic.
+2. **Columns.** Each entity declares `columns: ColumnDef<T>[]`, the contract `useServerDataTable` already exposes generically — proven, zero shell changes needed.
+3. **Filters.** The baseline Status filter is mandatory in the shape rule 5 declares; entity-specific filters (e.g. scoping `Term` by `AcademicYear`) attach via an optional `extraFilters` slot, additive to the toolbar, never a structural rewrite.
+4. **Bilinguality.** Each entity declares `bilingual: true | false` for its name field — `Section` is the one `false` today; the rest are `true`.
+5. **Status shape.** Each entity declares `statusType: 'boolean' | 'lifecycle3'`, determining the List filter's options and the row action's label (Deactivate vs. Close) — never Delete (§28.7).
+6. **Invariants.** Always server-side, surfaced as standard 422 errors (§28.6) — no client-side exception to this rule.
+7. **Pattern boundary.** Any entity with a real `HasTemporalAssignment`-backed lifecycle (effective dates, overlap — e.g. Teacher Assignment, Homeroom Assignment) is explicitly outside this pattern, routed to UI Sprint 2 (Temporal Assignment Workspace) instead. Test: does the entity have effective dates/overlap semantics? Yes → Sprint 2; no (a plain `is_active`/`status` field only) → this pattern.
+8. **Detail content.** The shared Detail shell (§28.5) is guaranteed for every entity; entity-specific panels/related-records content is added only when that consuming entity is actually built, never speculatively.
+9. **Capabilities.** Each entity/workspace declares a `capabilities` object — `{ canCreate, canEdit, canDeactivate, hasDetail, hasBulkActions }` — read by the shared List/Detail/Form shells to decide which actions/affordances render, replacing what would otherwise become scattered `if (entity === ...)` conditionals in the UI as more entities join the pattern. All five Sprint 1 entities declare `hasBulkActions: false` today (rule 3's baseline exclusion), `canCreate`/`canEdit`/`canDeactivate: true`, `hasDetail: true`.
+
+### 28.9 Shared Component Inventory
+
+| Component | Status | Note |
+|---|---|---|
+| `DataTable` + `useServerDataTable` | **Existing** (`platform/data-table/`) | Generic, previously unconsumed by any real workspace — first real consumer here |
+| `TextField` / `SelectField` / `DateField` / `BilingualNameField` | **Existing** (`platform/forms/`) | RHF + Zod, ready |
+| `mapServerErrors` | **Existing** | Generic, Laravel 422 shape |
+| `StickyActionBar` | **Existing** (`platform/components/ui/`) | Frozen §10/§26.5 |
+| `useConfirm` / `ConfirmDialog` | **Existing** (`platform/modals/`) | Reused for Deactivate/Close confirmation |
+| `Breadcrumb`, `WorkspaceHeader` | **Existing** (`platform/shell/`) | Ready |
+| `Badge`, `Table`, `Skeleton`, `Dialog`, `DropdownMenu`, `Select`, `Input`, `Label` | **Existing** (primitives) | Ready |
+| Tab Switcher (Academic's 5-entity internal nav) | **New** | Small, workspace-scoped, no precedent to reuse |
+| `SearchInput` (list-scoped, debounced) | **New** | Distinct from the global `SearchBar` |
+| Filter toolbar + "N active" chip | **New** | No filter mechanism exists in `platform/` yet |
+| Numbered Pagination | **Extension of existing `DataTable`** | Upgrades, does not replace, the current prev/next control |
+| `DataTable` Retry + dim-on-refetch | **Extension of existing `data-table.tsx`** | Small, in-place fix |
+| `useUnsavedChangesGuard` | **New** | Closes §M3 |
+| `useEntityMutation` | **New** | Closes §M10 |
+| `EntityDetailPage` | **New — independent pattern**, not a wrapper around `EntityFormPage` | §28.3 |
+| `EntityFormPage` | **New — independent pattern** | §28.3 |
+| Status-aware row action (Deactivate/Close) | **New**, small | Consumes the existing `useConfirm`, no new dialog |
+
+No component requires a rebuild from scratch — every foundational primitive (Table/Form/Modal/Header/Breadcrumb) already exists and is generic; every new item is additive.
+
+### 28.10 Reusable Layout Patterns
+
+`StickyActionBar`, `Breadcrumb`, `WorkspaceHeader`, and `useConfirm` all carry over unchanged from §26/§27's own precedent — this pattern's contribution is `DataTable`'s first real wiring, plus the new List/Detail/Form shells and the declarative metadata contract (§28.8), all deliberately built reusable by every future entity-CRUD workspace (Students, HR, Library, Finance), not scoped to Academic specifically.
+
+### 28.11 Permission Model
+
+Each entity/workspace's `capabilities` (§28.8 rule 9) reflects, but never grants, real server-side permission checks — the same "the write endpoint is the real gate, the UI flag is just an accurate preview of it" discipline §26.6/§27.6 already established. `canEdit: true` never promises more than a subsequent write would actually allow. A user with view-only access sees List and Detail with no Edit/Deactivate/New affordances rendered; List rows the user has no view permission for are simply absent, not shown-then-blocked.
+
+### 28.12 Empty States
+
+Two conditions (List, §28.4) — no third "not connected" state exists here since these are always-real Master Data reads, not provider-backed configuration (§26.9/§27.9's third condition doesn't apply to this pattern).
+
+### 28.13 Responsive Behavior
+
+Desktop table behavior is unchanged from `DataTable`'s current baseline (`overflow-x-auto` horizontal scroll) — a full card/list mobile fallback (§3 improvement 9's stated goal) is a **disclosed, deliberate deferral**, not built in Sprint 1, tracked as a known Foundation-level enhancement for a future pass once a real mobile usage pattern justifies the cost, the same "promotion, not prediction" judgment applied throughout this document. Detail/Form pages (single-column already) require no responsive change.
+
+### 28.14 Accessibility
+
+Tab Switcher is a real nav landmark (`aria-label`, matching `Breadcrumb`/`SideNav`'s existing convention); the row-action "…" trigger gets a real `aria-label` (icon-only, per §9's blanket rule); `StickyActionBar`'s Save button keeps a deliberate tab order on Form pages, per §26.11's precedent.
+
+### 28.15 Registration Principle
+
+The Tab Switcher's five entities are registered in a local, Academic-workspace-scoped config array — explicitly **not** the global `WorkspaceDefinition` registry (§8.2), which governs top-level workspace nav, a different concern. A future entity-CRUD workspace (Students, HR) implementing this same pattern registers its own local tab/entity config independently; nothing here creates a new shared cross-workspace registry.
+
+### 28.16 Implementation Plan
+
+Mirrors §26.13/§27.13's own two-phase discipline:
+
+- **UI Sprint 1-A (frontend infrastructure):** `EntityListPage`/`EntityDetailPage`/`EntityFormPage` shells, the declarative metadata contract (§28.8), `useUnsavedChangesGuard`, `useEntityMutation`, `SearchInput`, filter toolbar, numbered Pagination, `DataTable` retry/dim-on-refetch — built and verified against a temporary, fully-reverted fixture (one or two fixture entities), the same discipline as every prior phase (Phase B/D/E-A/F-A).
+- **UI Sprint 1-B (real Academic entities):** binding the five real entities (`AcademicYear`/`Term`/`GradeLevel`/`Subject`/`Section`) via each one's declared metadata, plus the thin adapter-layer REST endpoints each needs (mirroring E-B/F-B's own "expose existing services verbatim" principle) — sequenced after 1-A, per the standing rule that backend-facing capability is proven against a fixture before real data flow is wired.
+
+### 28.17 Status
+
+**Frozen design (2026-07-30).** Architecture & UX Pass reviewed with no substantive changes beyond this freeze's own two additions (§28.9's Capabilities Metadata field, §28.7's Delete rule, both incorporated before freeze, not deferred) — mirroring §27.14's own same-day pre-freeze revision precedent.
+
+**Phase 1-A (frontend infrastructure) COMPLETE (2026-07-30).** All of §28.4/§28.5/§28.6's shells and the §28.8 declarative metadata contract are real, shipped code in `admin/src/platform/`: `entity-workspace/` (`entity-metadata.ts`'s types, `entity-list-page.tsx`, `entity-detail-page.tsx`, `entity-form-page.tsx`, `entity-field-value.tsx`, `entity-workspace-shell.tsx` — the Flat Tab Switcher — `entity-route.ts`, `locales/`), `data-table/search-input.tsx`, `data-table/filter-toolbar.tsx`, `data-table/pagination.tsx` (numbered-with-ellipsis, replacing the prev/next-only control), `forms/use-unsaved-changes-guard.ts` (closes §M3), `forms/use-entity-mutation.ts` (closes §M10), `toasts/` (a new toast primitive — `toast-store.ts`/`toast-host.tsx`, mirroring `modal-store.ts`/`modal-host.tsx`'s own imperative-stack shape; no toast mechanism of any kind existed anywhere in this codebase before this phase, confirmed by inspection), and `components/ui/tabs.tsx` (a new Radix-backed primitive, §11's "don't hand-roll when Radix is available" rule). `data-table.tsx` was extended in place, not replaced, with the dim-on-refetch/Retry behavior §28.4 specified.
+
+**A real, load-bearing routing gap was found and surfaced before implementation, per the project's standing "surface before implementing" discipline** (Provider Registry's own Phase F-B precedent, §27.14): `router.tsx` had exactly one route per workspace (`/w/$workspaceKey`), and Configuration Platform/Provider Registry's own List↔Detail navigation both use local `useState`, never the URL — confirmed by direct inspection, not assumed — which contradicts §7.1's own already-frozen praise for URL-driven, deep-linkable list state. Resolved by explicit user decision: extend the router (recommended option) rather than repeat the local-state shortcut a third time. `router.tsx` now nests `workspaceIndexRoute` (`/`) and `workspaceSplatRoute` (`$`) under a shared `workspaceRoute` parent — a flat sibling-route version was tried first and produced a real, reproduced TanStack Router console warning (ambiguous path generation between the two full paths); the nested index+splat shape is TanStack Router's own documented pattern for this exact case and has no such ambiguity. A new `workspace-sub-path.ts` context threads the splat value down to `WorkspaceRoutePage` additively — no existing workspace's own code changed, and no workspace that never calls `useWorkspaceSubPath()` is affected.
+
+**Three real bugs found and fixed during live verification** (Docker backend, real login as `testuser`, a temporary two-entity fixture proving both status shapes — `bilingual: true` + `statusType: 'boolean'` and `bilingual: false` + `statusType: 'lifecycle3'` — fully reverted before this entry was written, confirmed via `git diff` showing zero trace on `App.tsx`/`use-visible-workspaces.ts`):
+
+1. The fixture's own mock data provider mutated cached row objects in place (`row.is_active = ...`) instead of replacing them immutably. Since React Query's structural-sharing comparison saw the "new" fetch result as identical to the already-mutated cached object, `invalidateQueries` silently produced no re-render even though the underlying data had genuinely changed — a Deactivate/Activate/Close action's own row updated internally but never visibly. Real backends never have this failure mode (every HTTP response is a fresh JSON object), but the fixture itself was fixed to replace array entries immutably rather than left as a known-wrong shortcut, since the point of live verification is to prove the pattern, not paper over a shortcut in the harness proving it.
+2. `useUnsavedChangesGuard`'s `shouldBlockFn` had its boolean sense inverted — `useBlocker` treats `true` as "block/stay," but `useConfirm` resolves `true` when the user clicks the confirm ("Discard") button, i.e. when they want to leave. Found live: clicking "Discard" silently failed to navigate. Fixed by negating the resolved value.
+3. A successful Save still popped the "Discard unsaved changes?" prompt on its own resulting navigation. Root cause: `onSuccess` called `reset(...)` (clearing `isDirty`) and `onSaved(row)` → `navigate(...)` synchronously in the same callback tick; `useBlocker`'s re-registration effect (which would have picked up the now-false `isDirty`) had not yet committed by the time `navigate()` ran, so the *stale* blocker intercepted its own success path. Fixed by routing the saved row through a state variable and firing `onSaved` from a separate `useEffect`, guaranteeing the guard's re-registration commits first.
+
+A fourth, smaller gap was also found and fixed: `EntityFormPage`'s breadcrumb didn't pass an `href` for its intermediate segment, so "Catalog Items" rendered as inert text instead of a link on Create/Edit pages — fixed by adding a `listHref` prop, threaded from `EntityWorkspaceShell`.
+
+Full verification: `tsc -b` clean, `oxlint` clean (same two pre-existing-pattern warnings, none new), `vitest run` 4/4 passing (no regressions; no new automated tests were added for the entity-workspace pattern itself in this phase — verified live instead, matching Phase E-A/F-A's own precedent). Live browser, real Docker backend, real login: List (search debounce, status filter for both shapes, "N filters active" + Clear All, numbered pagination, both empty-state conditions) → Detail (read-only fields, permission-aware Edit visibility) → Form (Create and Edit, both navigating correctly post-save) all exercised end-to-end for both fixture entities; row-level Deactivate/Activate (boolean) and Close (lifecycle3, correctly absent once already closed) confirmed, including their confirm dialogs and success toasts; the unsaved-changes guard confirmed blocking in both directions (Keep Editing stays, Discard leaves) with no false-positive on save; RTL (real `i18next.changeLanguage`, correct Arabic strings throughout including interpolated entity names) and dark mode (`data-theme="dark"`) both confirmed with zero console errors.
+
+**A subsequent independent read-only repository review — fresh reads and fresh command re-runs, not a review of the implementation summary — found no layering, duplication, router, guard-logic, or §28-compliance issues.** Specifically verified independently: `entity-workspace/` contains zero Academic-specific identifiers outside comments and zero imports from `@/workspaces/*`/`@/dev/*`; the nested index+splat router structure is real, not just described, and `tsc -b`/`vite build` both re-ran clean; `useUnsavedChangesGuard`'s boolean was independently re-derived from `useBlocker`'s own library source (not merely diffed against the pre-fix version) and confirmed correct; the fixture's absence and the zero-`git diff` claim on `App.tsx`/`use-visible-workspaces.ts` were independently re-verified, not re-quoted; `EntityDataProvider`'s type has no delete method at all (§28.7), and `entity.capabilities.*` is genuinely read for every gated affordance with no `entity.key === ...` branching anywhere (§28.8 rule 9). **Certified APPROVED FOR FINAL CLOSURE** — the same evidentiary bar applied to Sprint 4.2/4.3/4.4/B/C, not a lighter pass because this was frontend work. Two minor, non-blocking findings recorded as new Technical Debt Register entries (`docs/IMPLEMENTATION_PLAYBOOK.md`) rather than fixed inline, since neither affects correctness: `data-table/search-input.tsx`'s debounce duplicates `platform/search/search-bar.tsx`'s near-identical logic (no shared `useDebouncedValue` hook exists to reuse — the same category of gap `search-input.tsx`'s own comment already disclosed); and `platform/i18n/index.ts` statically imports `entity-workspace/locales/*` rather than using its own adjacent `registerWorkspaceTranslations()` extension point, inconsistent with that file's own stated self-description (defensible if `entity-workspace` is platform infrastructure rather than a workspace, but not reconciled explicitly).
+
+**UI Sprint 1-A: COMPLETE AND CLOSED (2026-07-30).**
+
+**UI Sprint 1-B (binding the five real Academic entities) is complete — see §29.**
+
+---
+

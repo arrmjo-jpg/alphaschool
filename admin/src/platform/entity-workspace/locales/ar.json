@@ -1,0 +1,60 @@
+{
+  "tabs": { "ariaLabel": "نوع الكيان" },
+  "list": {
+    "newButton": "{{entity}} جديد",
+    "searchPlaceholder": "بحث في {{entity}}...",
+    "filters": {
+      "statusLabel": "الحالة",
+      "all": "الكل",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "activeCount": "فلتر واحد نشط",
+      "activeCount_other": "{{count}} فلاتر نشطة",
+      "clearAll": "مسح الكل"
+    },
+    "empty": {
+      "none": { "title": "لا يوجد {{entity}} بعد", "body": "أنشئ أول سجل للبدء." },
+      "filtered": { "title": "لا نتائج مطابقة للفلاتر", "body": "حاول تعديل الفلاتر أو مسحها." }
+    },
+    "error": { "title": "حدث خطأ أثناء تحميل البيانات.", "retry": "إعادة المحاولة" },
+    "pagination": { "pageOf": "صفحة {{page}} من {{lastPage}}" }
+  },
+  "detail": {
+    "editButton": "تعديل",
+    "backButton": "العودة إلى {{entity}}"
+  },
+  "form": {
+    "cancelButton": "إلغاء",
+    "saveButton": "حفظ",
+    "createTitle": "{{entity}} جديد",
+    "editTitle": "تعديل {{entity}}",
+    "unsavedGuard": {
+      "title": "تجاهل التغييرات غير المحفوظة؟",
+      "description": "لديك تغييرات غير محفوظة. مغادرة هذه الصفحة سيؤدي إلى تجاهلها.",
+      "confirm": "تجاهل",
+      "cancel": "متابعة التعديل"
+    }
+  },
+  "mutation": {
+    "createSuccess": "تم إنشاء {{entity}}",
+    "updateSuccess": "تم تحديث {{entity}}",
+    "statusSuccess": "تم تحديث حالة {{entity}}",
+    "genericError": "حدث خطأ ما. حاول مرة أخرى."
+  },
+  "rowActions": {
+    "view": "عرض",
+    "edit": "تعديل",
+    "deactivate": "تعطيل",
+    "activate": "تفعيل",
+    "close": "إغلاق",
+    "menuLabel": "إجراءات"
+  },
+  "statusConfirm": {
+    "deactivateTitle": "تعطيل {{name}}؟",
+    "deactivateDescription": "لن يعود هذا العنصر متاحًا لإسنادات جديدة. يمكن إعادة تفعيله لاحقًا.",
+    "activateTitle": "تفعيل {{name}}؟",
+    "closeTitle": "إغلاق {{name}}؟",
+    "closeDescription": "إغلاق هذا السجل يمنع أي كتابة نطاق جديدة عليه. لا يمكن التراجع عن هذا الإجراء.",
+    "confirm": "تأكيد"
+  }
+}
