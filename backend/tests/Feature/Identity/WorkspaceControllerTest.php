@@ -81,6 +81,35 @@ it('returns provider-registry for a user holding administration.providers.view',
     ]);
 });
 
+/**
+ * UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.2) -- Assignments reuses
+ * the same `academic.manage-catalog` permission Academic's own entry
+ * does, not a separate workspace-only permission.
+ */
+it('returns both academic and assignments for a user holding academic.manage-catalog', function () {
+    $branch = Branch::factory()->create();
+    $user = User::factory()->create();
+    app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
+
+    $group = PermissionGroup::firstOrCreate(['code' => 'academic-test'], ['name' => ['en' => 'x', 'ar' => 'y']]);
+    $permission = Permission::firstOrCreate(
+        ['name' => 'academic.manage-catalog', 'guard_name' => 'sanctum'],
+        ['permission_group_id' => $group->id, 'display_name' => ['en' => 'x', 'ar' => 'y']],
+    );
+    $role = Role::create(['name' => 'role-'.uniqid(), 'guard_name' => 'sanctum', 'branch_id' => null]);
+    $role->givePermissionTo($permission);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user->fresh())->getJson(route('workspaces.index'));
+
+    $response->assertOk()->assertJson([
+        'workspaces' => [
+            ['key' => 'academic', 'required_permission' => 'academic.manage-catalog'],
+            ['key' => 'assignments', 'required_permission' => 'academic.manage-catalog'],
+        ],
+    ]);
+});
+
 it('does not grant provider-registry visibility merely from holding a per-slot edit permission', function () {
     $branch = Branch::factory()->create();
     $user = User::factory()->create();

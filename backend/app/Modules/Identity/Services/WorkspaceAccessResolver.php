@@ -63,6 +63,15 @@ class WorkspaceAccessResolver
             $workspaces[] = ['key' => 'academic', 'required_permission' => 'academic.manage-catalog'];
         }
 
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.2) -- reuses the
+        // same permission HomeroomAssignmentController itself checks
+        // server-side, not a new workspace-only one, matching Academic's
+        // own precedent immediately above (a temporal Assignment Engine
+        // is still catalog-management work, not a separate capability).
+        if ($this->hasPermission($user, 'academic.manage-catalog')) {
+            $workspaces[] = ['key' => 'assignments', 'required_permission' => 'academic.manage-catalog'];
+        }
+
         return $workspaces;
     }
 

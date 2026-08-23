@@ -1,7 +1,9 @@
 <?php
 
+use App\Core\Http\Controllers\ReasonCodeController;
 use App\Modules\Academic\Http\Controllers\AcademicYearController;
 use App\Modules\Academic\Http\Controllers\GradeLevelController;
+use App\Modules\Academic\Http\Controllers\HomeroomAssignmentController;
 use App\Modules\Academic\Http\Controllers\SectionController;
 use App\Modules\Academic\Http\Controllers\SubjectController;
 use App\Modules\Academic\Http\Controllers\TermController;
@@ -13,6 +15,7 @@ use App\Modules\Identity\Http\Controllers\MeController;
 use App\Modules\Identity\Http\Controllers\WorkspaceController;
 use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
+use App\Modules\People\Http\Controllers\EmployeeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +48,12 @@ Route::prefix('v1')->group(function () {
         // read-only lookup, not a Branch CRUD workspace; Section is the
         // first Academic entity with a real Branch FK.
         Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.5) -- minimal
+        // read-only lookups, not full Employee/ReasonCode CRUD surfaces;
+        // HomeroomAssignment's Create form is the first real consumer of
+        // both.
+        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/reason-codes', [ReasonCodeController::class, 'index'])->name('reason-codes.index');
     });
 
     // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- a thin adapter
@@ -124,6 +133,19 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [SectionController::class, 'store'])->name('store');
             Route::patch('/{id}', [SectionController::class, 'update'])->name('update');
             Route::patch('/{id}/status', [SectionController::class, 'setStatus'])->name('status');
+        });
+
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.6) -- Timeline/
+        // Action-shaped, not a thin adapter over AcademicMasterDataController:
+        // no update/destroy routes exist at all, since HasTemporalAssignment
+        // forbids editing a closed period in place. close/cancel are
+        // distinct, separately-named actions (§30.4), not a generic status
+        // PATCH.
+        Route::prefix('homeroom-assignments')->name('homeroom-assignments.')->group(function () {
+            Route::get('/', [HomeroomAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [HomeroomAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [HomeroomAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [HomeroomAssignmentController::class, 'cancel'])->name('cancel');
         });
     });
 

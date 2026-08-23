@@ -6,6 +6,7 @@ use App\Core\ValueObjects\DateRange;
 use App\Core\ValueObjects\ReasonCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -219,6 +220,17 @@ trait HasTemporalAssignment
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Every consumer shares the same reason_code_id column pointing at the
+     * same App\Core\Models\ReasonCode catalog -- defined once here so
+     * HTTP-layer adapters (e.g. HomeroomAssignmentController) can eager-load
+     * and expose the resolved code without each model redeclaring it.
+     */
+    public function reasonCode(): BelongsTo
+    {
+        return $this->belongsTo(\App\Core\Models\ReasonCode::class, 'reason_code_id');
     }
 
     protected function assertReasonIsValidForContext(ReasonCode $reason): void
