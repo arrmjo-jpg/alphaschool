@@ -7,6 +7,8 @@ use App\Modules\Academic\Http\Controllers\HomeroomAssignmentController;
 use App\Modules\Academic\Http\Controllers\SectionAssignmentController;
 use App\Modules\Academic\Http\Controllers\SectionController;
 use App\Modules\Academic\Http\Controllers\SubjectController;
+use App\Modules\Academic\Http\Controllers\SubjectOfferingController;
+use App\Modules\Academic\Http\Controllers\TeacherAssignmentController;
 use App\Modules\Academic\Http\Controllers\TermController;
 use App\Modules\Administration\Http\Controllers\ConfigurationController;
 use App\Modules\Administration\Http\Controllers\ProviderRegistryController;
@@ -165,6 +167,24 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [SectionAssignmentController::class, 'store'])->name('store');
             Route::patch('/{id}/close', [SectionAssignmentController::class, 'close'])->name('close');
             Route::patch('/{id}/cancel', [SectionAssignmentController::class, 'cancel'])->name('cancel');
+        });
+
+        // UI Sprint 2, TeacherAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §32.3/§32.6) -- SubjectOffering's own minimal read-only lookup
+        // (no update/destroy, no CRUD -- creation stays backend-only via
+        // CreateSubjectOfferingAction) and teacher-assignments' own
+        // Timeline/Action-shaped controller, mirroring homeroom-assignments'
+        // shape exactly.
+        Route::prefix('subject-offerings')->name('subject-offerings.')->group(function () {
+            Route::get('/', [SubjectOfferingController::class, 'index'])->name('index');
+            Route::get('/{id}', [SubjectOfferingController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('teacher-assignments')->name('teacher-assignments.')->group(function () {
+            Route::get('/', [TeacherAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [TeacherAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [TeacherAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [TeacherAssignmentController::class, 'cancel'])->name('cancel');
         });
     });
 

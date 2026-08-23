@@ -97,3 +97,51 @@ export const SectionAssignmentSchema = z.object({
 export const SectionAssignmentListResponseSchema = z.object({ data: z.array(SectionAssignmentSchema) })
 
 export type SectionAssignment = z.infer<typeof SectionAssignmentSchema>
+
+/**
+ * UI Sprint 2's TeacherAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+ * §32.3) -- GET /academic/subject-offerings and GET
+ * /academic/subject-offerings/{id} share this shape. Unlike
+ * `EnrollmentSchema`, every name here is resolved directly -- Subject/
+ * Section/Term/AcademicYear all live in the same Academic module as
+ * `SubjectOfferingController` itself, so there is no Foundation->Domain
+ * boundary forcing raw ids only (§32.3's own contrast with §31.2).
+ */
+export const SubjectOfferingSchema = z.object({
+  id: z.number().int(),
+  subject_id: z.number().int(),
+  subject_name_en: z.string(),
+  subject_name_ar: z.string(),
+  section_id: z.number().int(),
+  section_name: z.string(),
+  term_id: z.number().int(),
+  term_name_en: z.string(),
+  term_name_ar: z.string(),
+  academic_year_id: z.number().int(),
+  academic_year_name_en: z.string(),
+  academic_year_name_ar: z.string(),
+})
+
+export const SubjectOfferingListResponseSchema = z.object({ data: z.array(SubjectOfferingSchema) })
+
+export type SubjectOffering = z.infer<typeof SubjectOfferingSchema>
+
+/** GET/PATCH /academic/teacher-assignments (§32.6) -- mirrors HomeroomAssignmentSchema's shape exactly, anchored on SubjectOffering instead of Section. */
+export const TeacherAssignmentSchema = z.object({
+  id: z.number().int(),
+  subject_offering_id: z.number().int(),
+  employee_id: z.number().int(),
+  employee_name_en: z.string(),
+  employee_name_ar: z.string(),
+  effective_from: z.string(),
+  effective_until: z.string().nullable(),
+  status: z.enum(['scheduled', 'active', 'ended', 'cancelled']),
+  reason_code: z.string().nullable(),
+  ended_by_id: z.number().int().nullable(),
+  ended_by_name_en: z.string().nullable(),
+  ended_by_name_ar: z.string().nullable(),
+})
+
+export const TeacherAssignmentListResponseSchema = z.object({ data: z.array(TeacherAssignmentSchema) })
+
+export type TeacherAssignment = z.infer<typeof TeacherAssignmentSchema>

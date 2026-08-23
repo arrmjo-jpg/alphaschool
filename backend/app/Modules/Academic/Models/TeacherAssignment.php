@@ -5,6 +5,7 @@ namespace App\Modules\Academic\Models;
 use App\Core\Concerns\HasPublicId;
 use App\Core\Concerns\HasTemporalAssignment;
 use App\Core\Contracts\OwnedByAggregate;
+use App\Modules\Identity\Models\User;
 use App\Modules\People\Models\Employee;
 use Database\Factories\TeacherAssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -67,6 +68,18 @@ class TeacherAssignment extends Model implements OwnedByAggregate
     public function subjectOffering(): BelongsTo
     {
         return $this->belongsTo(SubjectOffering::class);
+    }
+
+    /**
+     * Not on HasTemporalAssignment itself despite ended_by_id being a
+     * shared column -- User lives in the Identity Foundation module, and
+     * Core must never depend on a Foundation module (deptrac's
+     * CoreBoundaryTest). Same reasoning as HomeroomAssignment's and
+     * SectionAssignment's own copies of this relation.
+     */
+    public function endedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ended_by_id');
     }
 
     /**

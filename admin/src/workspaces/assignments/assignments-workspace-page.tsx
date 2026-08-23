@@ -14,6 +14,11 @@ import { SectionTimelinePage } from '@/workspaces/assignments/section/section-ti
 import { SectionCreatePage } from '@/workspaces/assignments/section/section-create-page'
 import { SectionClosePage } from '@/workspaces/assignments/section/section-close-page'
 import { SectionCancelPage } from '@/workspaces/assignments/section/section-cancel-page'
+import { TeacherLandingPage } from '@/workspaces/assignments/teacher/teacher-landing-page'
+import { TeacherTimelinePage } from '@/workspaces/assignments/teacher/teacher-timeline-page'
+import { TeacherCreatePage } from '@/workspaces/assignments/teacher/teacher-create-page'
+import { TeacherClosePage } from '@/workspaces/assignments/teacher/teacher-close-page'
+import { TeacherCancelPage } from '@/workspaces/assignments/teacher/teacher-cancel-page'
 
 const TABS = ['homeroom', 'section', 'teacher'] as const
 type Tab = (typeof TABS)[number]
@@ -22,10 +27,9 @@ type Tab = (typeof TABS)[number]
  * The Temporal Assignment Workspace (docs/ADMIN_DESIGN_SYSTEM.md §30.2)
  * -- a flat Tab Switcher mirroring §28.2's own precedent exactly, but
  * NOT built on EntityWorkspaceShell (§30.1: a genuinely different
- * pattern, no List/Detail/Form/Edit). `homeroom` (§30) and `section`
- * (§31) are wired; `teacher` remains an unwired stub panel -- added for
- * real only when TeacherAssignment's own slice is built, per §31.12's
- * own explicit deferral, never spun up speculatively.
+ * pattern, no List/Detail/Form/Edit). `homeroom` (§30), `section` (§31),
+ * and `teacher` (§32) are all wired now -- the pattern's third and
+ * final vertical slice.
  */
 export default function AssignmentsWorkspacePage() {
   const { t } = useTranslation('assignments')
@@ -58,7 +62,7 @@ export default function AssignmentsWorkspacePage() {
 
       {activeTab === 'homeroom' && <HomeroomRoutes segments={rest} />}
       {activeTab === 'section' && <SectionRoutes segments={rest} />}
-      {activeTab === 'teacher' && <StubTabPanel tab={activeTab} />}
+      {activeTab === 'teacher' && <TeacherRoutes segments={rest} />}
     </div>
   )
 }
@@ -109,7 +113,25 @@ function SectionRoutes({ segments }: { segments: string[] }) {
   return null
 }
 
-function StubTabPanel({ tab }: { tab: Tab }) {
-  const { t } = useTranslation('assignments')
-  return <p className="p-6 text-sm text-muted-foreground">{t('tabs.comingSoon', { tab: t(`tabs.${tab}`) })}</p>
+function TeacherRoutes({ segments }: { segments: string[] }) {
+  if (segments.length === 0) {
+    return <TeacherLandingPage />
+  }
+
+  const [subjectOfferingId, ...rest] = segments as [string, ...string[]]
+
+  if (rest.length === 0) {
+    return <TeacherTimelinePage subjectOfferingId={subjectOfferingId} />
+  }
+  if (rest.length === 1 && rest[0] === 'new') {
+    return <TeacherCreatePage subjectOfferingId={subjectOfferingId} />
+  }
+  if (rest.length === 2 && rest[1] === 'close') {
+    return <TeacherClosePage subjectOfferingId={subjectOfferingId} assignmentId={rest[0]!} />
+  }
+  if (rest.length === 2 && rest[1] === 'cancel') {
+    return <TeacherCancelPage subjectOfferingId={subjectOfferingId} assignmentId={rest[0]!} />
+  }
+
+  return null
 }
