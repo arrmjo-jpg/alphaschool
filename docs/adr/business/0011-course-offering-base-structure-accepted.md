@@ -1,6 +1,6 @@
 # BUS-0011: Course Template / Course Offering / Course Staff / Sessions Base Structure Accepted, With Named Unresolved Sub-Issues
 
-**Status:** 🟢 Accepted (base structure) — three sub-issues remain 🔴 unresolved, listed below, not silently closed by this ADR
+**Status:** 🟢 Accepted (base structure) — all three sub-issues originally listed below are now 🟢 Resolved by Learning Blueprint v1.0 (`docs/business-domains/learning.md`), not silently closed here but reconciled explicitly below
 
 **Date:** 2026-07-22
 
@@ -24,10 +24,13 @@ Not applicable in the usual sense — this ADR's purpose is to formally record s
 
 The base structure is accepted: Course Template (versioned per BUS-0001) as content-only; Course Offering as a scheduled run referencing Teacher, Academic Year, Enrollment Rules, Audience, Pricing (referencing Accounting, not reimplementing it), Certificates (referencing the Document Engine, not reimplementing it), Meeting Provider; Course Staff as a real role set, not a single "Teacher" field; Sessions as the schedulable unit a Meeting Provider is attached to.
 
-**Explicitly not resolved by accepting the base structure — three real, named flaws remain open, tracked here rather than lost:**
-1. **Enrollment is single-valued per Offering** and cannot express a realistic mixed audience (Grade auto-enrolled, Parents requiring approval, Public paying, simultaneously, for the same Offering).
-2. **Teacher is single-cardinality** — co-teaching, TA grading delegation, and guest lecturers have no home.
-3. **Meeting Provider is Offering-level, not session-level** — a recurring weekly class with per-session meeting instances has no way to express distinct links/times per session.
+**Not resolved by accepting the base structure at the time this ADR was written — three real, named flaws, tracked here rather than lost. All three are now reconciled, per the Learning Domain Blueprint (`docs/business-domains/learning.md`):**
+
+1. **Enrollment is single-valued per Offering** and cannot express a realistic mixed audience (Grade auto-enrolled, Parents requiring approval, Public paying, simultaneously, for the same Offering). — 🟢 **Resolved by Learning Blueprint v1.0.** Participation is modeled as many independent Actor↔Governed-Resource records per Offering (`ADR-0024`), one per participant, rather than a single Offering-level enrollment field — a mixed audience is the native shape, not a limitation.
+2. **Teacher is single-cardinality** — co-teaching, TA grading delegation, and guest lecturers have no home. — 🟢 **Resolved by Learning Blueprint v1.0.** The same Participation mechanism supports multiple simultaneous Capacity-holding records against one Offering (Instructor, Lead Instructor, TA, Guest Lecturer), a direct consequence of reusing `ADR-0024` rather than a separate fix.
+3. **Meeting Provider is Offering-level, not session-level** — a recurring weekly class with per-session meeting instances has no way to express distinct links/times per session. — 🟢 **Resolved by Learning Blueprint v1.0.** Session is modeled as its own sub-object of Course Offering, each carrying its own Meeting Provider reference, within Learning's own modeling — no new Foundation mechanism required.
+
+No new decisions are made by this reconciliation — each resolution already exists in the Learning Blueprint; this entry only stops pointing readers at a gap that no longer exists.
 
 ## Why This Decision Was Chosen
 

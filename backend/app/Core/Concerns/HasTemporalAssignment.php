@@ -6,7 +6,9 @@ use App\Core\ValueObjects\DateRange;
 use App\Core\ValueObjects\ReasonCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -33,6 +35,43 @@ use RuntimeException;
  *  - temporalReasonContext(): the reason_codes.context this model's
  *    reasons are looked up under (e.g. 'homeroom_teacher_assignment').
  *
+ * CONCURRENCY SAFETY (High-Priority Core Architecture Backlog, fixed
+ * here rather than per-consumer -- GuardianStudent was the first real
+ * consumer and had carried this as a documented, deliberately
+ * unpatched-locally limitation until now): save() is overridden to wrap
+ * the whole operation -- competitor lookup, overlap check, and the
+ * actual write -- in one DB::transaction(), and guardAgainstOverlap()'s
+ * competitor query holds a real row lock (lockForUpdate()) scoped to
+ * temporalScopeAttributes() for its duration. This closes the race
+ * where two concurrent saves for the SAME EXISTING scope could both
+ * pass the overlap check before either write lands.
+ *
+ * KNOWN REMAINING LIMITATION, disclosed not silently accepted: row
+ * locking cannot protect a scope that has zero prior rows -- two
+ * concurrent *first-ever* creates for a brand-new scope (nothing yet
+ * exists to lock) could still both pass the check. This is not
+ * exploitable by a caller that already locks a real, always-existing
+ * anchor row first (e.g. the Enrollment or Section row) before creating
+ * the temporal assignment -- exactly the discipline every Action in
+ * this codebase already follows (ConvertApplicantToStudentAction locks
+ * Applicant; the Sprint 4.4 Enrollment transition Actions lock
+ * Enrollment) -- but a caller that does not is not protected by this
+ * trait alone. A DB-level exclusion constraint would close this fully;
+ * not built here, since no consumer has forced the question yet
+ * (promotion, not prediction).
+ *
+ * DATE-BOUNDARY NORMALIZATION: setEffectiveFromAttribute()/
+ * setEffectiveUntilAttribute() below normalize both to
+ * Carbon::parse($value)->startOfDay() on every write, centrally --
+ * previously each consumer needed its own copy of this (GuardianStudent
+ * carried a local stopgap, now removed). A plain 'date' cast alone does
+ * NOT strip time-of-day from the stored value, only from what Eloquent
+ * displays back through the accessor -- left unhandled, a row created
+ * with effective_from = now() (a real timestamp, not midnight) would
+ * compare as "starting after" today at midnight in scopeAsOf(), and be
+ * wrongly excluded from active()/asOf(today()) for the rest of its own
+ * creation day.
+ *
  * See docs/developer/temporal-pattern.md for a worked example.
  */
 trait HasTemporalAssignment
@@ -46,6 +85,24 @@ trait HasTemporalAssignment
         static::saving(function (Model $model) {
             $model->guardAgainstOverlap();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    public function save(array $options = []): bool
+    {
+        return DB::transaction(fn (): bool => parent::save($options));
+    }
+
+    public function setEffectiveFromAttribute(mixed $value): void
+    {
+        $this->attributes['effective_from'] = $value !== null ? Carbon::parse($value)->startOfDay() : null;
+    }
+
+    public function setEffectiveUntilAttribute(mixed $value): void
+    {
+        $this->attributes['effective_until'] = $value !== null ? Carbon::parse($value)->startOfDay() : null;
     }
 
     public function range(): DateRange
@@ -93,10 +150,17 @@ trait HasTemporalAssignment
 
         $thisRange = $this->range();
 
+        // lockForUpdate() -- held for the remainder of this transaction
+        // (opened by the save() override above), through the actual
+        // write. Genuinely serializes two concurrent saves competing for
+        // the same scope where at least one competitor row already
+        // exists; see this trait's own docblock for the narrower,
+        // disclosed limitation when zero prior rows exist yet.
         $competitors = static::query()
             ->where($this->temporalScopeAttributes())
             ->where('status', '!=', 'cancelled')
             ->when($this->exists, fn (Builder $q) => $q->where($this->getKeyName(), '!=', $this->getKey()))
+            ->lockForUpdate()
             ->get();
 
         foreach ($competitors as $competitor) {
@@ -156,6 +220,17 @@ trait HasTemporalAssignment
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Every consumer shares the same reason_code_id column pointing at the
+     * same App\Core\Models\ReasonCode catalog -- defined once here so
+     * HTTP-layer adapters (e.g. HomeroomAssignmentController) can eager-load
+     * and expose the resolved code without each model redeclaring it.
+     */
+    public function reasonCode(): BelongsTo
+    {
+        return $this->belongsTo(\App\Core\Models\ReasonCode::class, 'reason_code_id');
     }
 
     protected function assertReasonIsValidForContext(ReasonCode $reason): void

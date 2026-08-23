@@ -1,12 +1,25 @@
 <?php
 
+use App\Core\Http\Controllers\ReasonCodeController;
+use App\Modules\Academic\Http\Controllers\AcademicYearController;
+use App\Modules\Academic\Http\Controllers\GradeLevelController;
+use App\Modules\Academic\Http\Controllers\HomeroomAssignmentController;
+use App\Modules\Academic\Http\Controllers\SectionAssignmentController;
+use App\Modules\Academic\Http\Controllers\SectionController;
+use App\Modules\Academic\Http\Controllers\SubjectController;
+use App\Modules\Academic\Http\Controllers\SubjectOfferingController;
+use App\Modules\Academic\Http\Controllers\TeacherAssignmentController;
+use App\Modules\Academic\Http\Controllers\TermController;
 use App\Modules\Administration\Http\Controllers\ConfigurationController;
 use App\Modules\Administration\Http\Controllers\ProviderRegistryController;
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Identity\Http\Controllers\BranchController;
 use App\Modules\Identity\Http\Controllers\MeController;
 use App\Modules\Identity\Http\Controllers\WorkspaceController;
 use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
+use App\Modules\People\Http\Controllers\EmployeeController;
+use App\Modules\People\Http\Controllers\EnrollmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +48,23 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [MeController::class, 'show'])->name('me');
         Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+        // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- a minimal
+        // read-only lookup, not a Branch CRUD workspace; Section is the
+        // first Academic entity with a real Branch FK.
+        Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.5) -- minimal
+        // read-only lookups, not full Employee/ReasonCode CRUD surfaces;
+        // HomeroomAssignment's Create form is the first real consumer of
+        // both.
+        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/reason-codes', [ReasonCodeController::class, 'index'])->name('reason-codes.index');
+        // UI Sprint 2, SectionAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §31.2) -- Enrollment's own minimal, read-only lookup, living in
+        // People (Foundation), consumed by Academic's Assignments frontend.
+        // /search before /{id} -- Laravel matches routes in registration
+        // order, and {id} would otherwise swallow the literal "search".
+        Route::get('/enrollments/search', [EnrollmentController::class, 'search'])->name('enrollments.search');
+        Route::get('/enrollments/{id}', [EnrollmentController::class, 'show'])->name('enrollments.show');
     });
 
     // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- a thin adapter
@@ -65,6 +95,97 @@ Route::prefix('v1')->group(function () {
         Route::get('/{slotKey}', [ProviderRegistryController::class, 'slot'])->where('slotKey', '.*')->name('show');
         Route::post('/{slotKey}/test', [ProviderRegistryController::class, 'testCredentials'])->where('slotKey', '.*')->name('test');
         Route::patch('/{slotKey}', [ProviderRegistryController::class, 'writeCredentials'])->where('slotKey', '.*')->name('write');
+    });
+
+    // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- thin adapters
+    // over each Academic Master Data model, sharing
+    // AcademicMasterDataController's one generic list/get/create/update/
+    // setStatus implementation (no per-entity duplication). No delete
+    // route exists on any of these groups -- §28.7's binding domain
+    // rule ("Reference Master Data entities never expose a Delete
+    // action") is enforced structurally, not just by convention: the
+    // shared base controller has no destroy() method to route to.
+    Route::middleware('auth:sanctum')->prefix('academic')->name('academic.')->group(function () {
+        Route::prefix('academic-years')->name('academic-years.')->group(function () {
+            Route::get('/', [AcademicYearController::class, 'index'])->name('index');
+            Route::get('/{id}', [AcademicYearController::class, 'show'])->name('show');
+            Route::post('/', [AcademicYearController::class, 'store'])->name('store');
+            Route::patch('/{id}', [AcademicYearController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [AcademicYearController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('grade-levels')->name('grade-levels.')->group(function () {
+            Route::get('/', [GradeLevelController::class, 'index'])->name('index');
+            Route::get('/{id}', [GradeLevelController::class, 'show'])->name('show');
+            Route::post('/', [GradeLevelController::class, 'store'])->name('store');
+            Route::patch('/{id}', [GradeLevelController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [GradeLevelController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('subjects')->name('subjects.')->group(function () {
+            Route::get('/', [SubjectController::class, 'index'])->name('index');
+            Route::get('/{id}', [SubjectController::class, 'show'])->name('show');
+            Route::post('/', [SubjectController::class, 'store'])->name('store');
+            Route::patch('/{id}', [SubjectController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [SubjectController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('terms')->name('terms.')->group(function () {
+            Route::get('/', [TermController::class, 'index'])->name('index');
+            Route::get('/{id}', [TermController::class, 'show'])->name('show');
+            Route::post('/', [TermController::class, 'store'])->name('store');
+            Route::patch('/{id}', [TermController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [TermController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('sections')->name('sections.')->group(function () {
+            Route::get('/', [SectionController::class, 'index'])->name('index');
+            Route::get('/{id}', [SectionController::class, 'show'])->name('show');
+            Route::post('/', [SectionController::class, 'store'])->name('store');
+            Route::patch('/{id}', [SectionController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [SectionController::class, 'setStatus'])->name('status');
+        });
+
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.6) -- Timeline/
+        // Action-shaped, not a thin adapter over AcademicMasterDataController:
+        // no update/destroy routes exist at all, since HasTemporalAssignment
+        // forbids editing a closed period in place. close/cancel are
+        // distinct, separately-named actions (§30.4), not a generic status
+        // PATCH.
+        Route::prefix('homeroom-assignments')->name('homeroom-assignments.')->group(function () {
+            Route::get('/', [HomeroomAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [HomeroomAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [HomeroomAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [HomeroomAssignmentController::class, 'cancel'])->name('cancel');
+        });
+
+        // UI Sprint 2, SectionAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §31.6) -- mirrors homeroom-assignments' own shape exactly, same
+        // reasoning: Timeline/Action-shaped, no update/destroy.
+        Route::prefix('section-assignments')->name('section-assignments.')->group(function () {
+            Route::get('/', [SectionAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [SectionAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [SectionAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [SectionAssignmentController::class, 'cancel'])->name('cancel');
+        });
+
+        // UI Sprint 2, TeacherAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §32.3/§32.6) -- SubjectOffering's own minimal read-only lookup
+        // (no update/destroy, no CRUD -- creation stays backend-only via
+        // CreateSubjectOfferingAction) and teacher-assignments' own
+        // Timeline/Action-shaped controller, mirroring homeroom-assignments'
+        // shape exactly.
+        Route::prefix('subject-offerings')->name('subject-offerings.')->group(function () {
+            Route::get('/', [SubjectOfferingController::class, 'index'])->name('index');
+            Route::get('/{id}', [SubjectOfferingController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('teacher-assignments')->name('teacher-assignments.')->group(function () {
+            Route::get('/', [TeacherAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [TeacherAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [TeacherAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [TeacherAssignmentController::class, 'cancel'])->name('cancel');
+        });
     });
 
     // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge

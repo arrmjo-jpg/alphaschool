@@ -1,0 +1,21 @@
+{
+  "status": {
+    "scheduled": "مجدول",
+    "active": "نشط",
+    "ended": "منتهٍ",
+    "cancelled": "ملغى"
+  },
+  "ongoing": "مستمر",
+  "reason": "السبب",
+  "endedBy": "أُنهي بواسطة {{name}}",
+  "actions": {
+    "close": "إنهاء",
+    "cancel": "إلغاء"
+  },
+  "form": {
+    "reasonLabel": "السبب",
+    "effectiveUntilLabel": "ساري حتى",
+    "cancelButton": "رجوع",
+    "submitButton": "تأكيد"
+  }
+}

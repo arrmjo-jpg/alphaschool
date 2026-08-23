@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Core\Models\ReasonCode;
+use App\Modules\Admissions\Models\Applicant;
 use Illuminate\Database\Seeder;
 
 /**
@@ -33,6 +34,76 @@ class ReasonCodeSeeder extends Seeder
         foreach ($guardianStudentReasons as $reason) {
             ReasonCode::updateOrCreate(
                 ['context' => 'guardian_student_relationship', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        // Sprint 4.2 -- Applicant.rejection_reason_code_id's own context,
+        // seeded now because DecideApplicationAction::reject() genuinely
+        // requires one this sprint, not speculatively.
+        $applicationRejectionReasons = [
+            ['code' => 'assessment_below_threshold', 'label' => ['en' => 'Assessment score below threshold', 'ar' => 'نتيجة الاختبار أقل من الحد المطلوب']],
+            ['code' => 'no_seat_available', 'label' => ['en' => 'No seat available', 'ar' => 'لا يوجد مقعد شاغر']],
+            ['code' => 'incomplete_documentation', 'label' => ['en' => 'Incomplete documentation', 'ar' => 'أوراق ثبوتية غير مكتملة']],
+            ['code' => 'withdrawn_by_guardian', 'label' => ['en' => 'Withdrawn by guardian', 'ar' => 'تم السحب من قبل ولي الأمر']],
+        ];
+
+        // Independent Review fix -- references Applicant's own constant
+        // rather than a second, independently-maintained copy of the
+        // same literal string, now that Applicant::reject() validates
+        // against it directly.
+        foreach ($applicationRejectionReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => Applicant::REJECTION_REASON_CONTEXT, 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        // Phase 5, Sprint B -- SectionAssignment/HomeroomAssignment's own
+        // closeAssignment()/cancelAssignment() contexts, seeded now
+        // (not deferred like SuspensionRecord's own context in Sprint
+        // 4.3) because both models' inherited HasTemporalAssignment
+        // methods are directly callable and tested this sprint, even
+        // though no dedicated "reassign/replace" orchestrating Action
+        // exists yet -- a real, exercised code path, not a speculative one.
+        $sectionAssignmentReasons = [
+            ['code' => 'section_transfer', 'label' => ['en' => 'Transferred to a different section', 'ar' => 'تم النقل إلى شعبة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($sectionAssignmentReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'section_assignment', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        $homeroomTeacherReasons = [
+            ['code' => 'teacher_reassigned', 'label' => ['en' => 'Teacher reassigned to a different section', 'ar' => 'تم نقل المعلم إلى شعبة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($homeroomTeacherReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'homeroom_teacher_assignment', 'code' => $reason['code']],
+                ['label' => $reason['label'], 'is_active' => true],
+            );
+        }
+
+        // Subject Offering + Timetables Architecture Pass --
+        // TeacherAssignment's own closeAssignment()/cancelAssignment()
+        // context, seeded now for the same reason section_assignment/
+        // homeroom_teacher_assignment were: both inherited
+        // HasTemporalAssignment methods are directly callable and
+        // tested this sprint.
+        $subjectTeacherAssignmentReasons = [
+            ['code' => 'teacher_reassigned', 'label' => ['en' => 'Teacher reassigned to a different subject offering', 'ar' => 'تم نقل المعلم إلى مادة أخرى']],
+            ['code' => 'entered_in_error', 'label' => ['en' => 'Entered in error', 'ar' => 'تم إدخالها بالخطأ']],
+        ];
+
+        foreach ($subjectTeacherAssignmentReasons as $reason) {
+            ReasonCode::updateOrCreate(
+                ['context' => 'subject_teacher_assignment', 'code' => $reason['code']],
                 ['label' => $reason['label'], 'is_active' => true],
             );
         }

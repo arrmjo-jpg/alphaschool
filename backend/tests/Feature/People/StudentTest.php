@@ -65,3 +65,22 @@ it('supports the withdrawn and graduated states via factory helpers', function (
     expect(Student::factory()->withdrawn()->create()->lifecycle_status)->toBe(Student::STATUS_WITHDRAWN)
         ->and(Student::factory()->graduated()->create()->lifecycle_status)->toBe(Student::STATUS_GRADUATED);
 });
+
+it('reactivates a withdrawn or graduated Student back to active', function () {
+    $withdrawn = Student::factory()->withdrawn()->create();
+    $withdrawn->reactivate();
+    expect($withdrawn->fresh()->lifecycle_status)->toBe(Student::STATUS_ACTIVE);
+
+    $graduated = Student::factory()->graduated()->create();
+    $graduated->reactivate();
+    expect($graduated->fresh()->lifecycle_status)->toBe(Student::STATUS_ACTIVE);
+});
+
+it('no-ops reactivate() on an already-active Student, matching the established idempotency convention', function () {
+    $student = Student::factory()->create();
+    expect($student->lifecycle_status)->toBe(Student::STATUS_ACTIVE);
+
+    $student->reactivate();
+
+    expect($student->fresh()->lifecycle_status)->toBe(Student::STATUS_ACTIVE);
+});

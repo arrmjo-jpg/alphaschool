@@ -27,19 +27,41 @@ This is business/product domain discovery — purpose, responsibilities, workflo
 5. Exactly one deployment-wide value, no single domain owns its meaning? → **Platform Configuration**.
 6. Otherwise → **Domain Configuration**, owned by the one domain it belongs to.
 
-### Domain document template versions
+### Domain document template — canonical (supersedes v1/v2/v3)
 
-**v1**: Purpose, Responsibilities, Submodules, Master Data, Configuration, Business Workflows, Permissions, Reports, Mobile Applications, Integrations, Cross-Domain Dependencies, Future Growth.
+**Historical note.** This section previously described three incremental template versions (v1, v2, v3-plus-Commercial-Differentiators). A later architecture review — triggered by comparing Academic's and Learning's independently-evolved Blueprint structures — found the two had accidentally diverged into two different, undocumented shapes: Academic followed this document's own v1→v2→v3 line; Learning was written under a separate, later Enterprise-Architecture-review exercise that never inherited it. Traced to two different exercises run at different points, never reconciled — not a deliberate two-profile design. This section replaces v1/v2/v3 with one canonical model. v1/v2/v3 are retired, not deleted from history — every already-shipped domain document still names which of them it was written under, and that record stays as-is until migrated.
 
-**v2**: v1's dimensions renamed/expanded — Purpose, Responsibilities, Business Capabilities, Submodules, Master Data, Settings, Workflows, Domain Events, Automation Opportunities, AI Opportunities, Provider Slots, Public APIs, Extension Points, Mobile Features, Dashboards, Reports, KPIs, Security Classification, Permissions, Audit Requirements, Data Ownership, Future Expansion.
+**Governing principle: every canonical question must receive an explicit decision — not every Blueprint must contain every section as its own heading.** A section may be merged into a neighboring one, or given an explicit "Not Applicable" disposition, when a domain genuinely has nothing to say for it — a small, narrow domain (Audit Log, Number Generator, Currency, an Identity-adjacent Foundation concern) shouldn't be forced into a template full of empty headings. The disposition itself must always be explicit and traceable, though — a section silently missing is an unexplained gap; a one-line "N/A — see §X" is a documented decision. **One exception, with no merge/N/A escape hatch: Commercial Differentiators.** It is a binding `CLAUDE.md` standing rule, not a section like the others — even a small Foundation-layer domain has to answer it with real content, however modest (e.g., "configurable per-domain numbering patterns, no vendor lock-in on ID formats" is a legitimate answer for something as small as Number Generator).
 
-**v3** (binding from Domain 11 onward): v2 plus a closing **Commercial Differentiators** section — see `CLAUDE.md`'s standing rule of the same name.
+**Canonical sections, organized by responsibility, not by the order each was historically added:**
 
-Domains 1–8 remain on v1 and are **retrofit-pending** to v3 — a known, tracked, not-yet-scheduled task (see Open Architecture Questions).
+**I. Foundation** — 1. Domain Purpose · 2. Business Scope (absorbs the earlier Responsibilities/Business Capabilities split) · 3. Business Objects (classified as Master Data / Reference Data / Transaction / Configuration / Policy, per the classification algorithm above — absorbs Submodules as an internal grouping, not a separate section) · 4. Business Processes (absorbs Workflows; Trigger/Steps/Result/Business Rules shape) · 5. Boundaries
+
+**II. Configuration & Behavior** — 6. Configuration (Business-Rule-vs-Configuration distinction enforced — a Policy-classified Business Object per §3 is never documented here) · 7. Events · 8. Automation Opportunities · 9. AI Opportunities (routes through the unified `AIDecision` primitive, BUS-0003)
+
+**III. Platform Integration** — 10. Integrations (absorbs Provider Slots and Public APIs) · 11. Extension Points
+
+**IV. Experience & Operations** — 12. Permissions · 13. Mobile Features · 14. Dashboards · 15. Reports · 16. KPIs
+
+**V. Governance & Compliance** — 17. Security Classification · 18. Audit Requirements · 19. Domain Invariants · 20. Domain Contracts (absorbs and supersedes the earlier standalone Data Ownership section — "Owns" carries that role now)
+
+**VI. Strategic** — 21. Future Expansion · 22. Commercial Differentiators (binding, no merge/N/A exception — see above)
+
+**VII. Verification** — 23. Architecture Validation · 24. Verdict
+
+**Binding from this point forward.** Every Blueprint written from here on — new domain or retrofit — follows this canonical template exclusively. There is no v1/v2/v3 choice to make; this is the only template.
+
+### Migration Guidelines (defined now; execution is separate, not run by defining this)
+
+1. **Academic** — smallest migration: add Verdict (the only canonical section missing after its recent Domain Invariants/Domain Contracts/Architecture Validation retrofit); reorganize existing sections into the seven clusters above (reordering only, no content change).
+2. **Learning** — the larger migration: restore Mobile Features and Reports (both present in Learning's pre-retrofit file, dropped during its rewrite); add Commercial Differentiators (closing a binding-rule gap, not optional); add Automation Opportunities, AI Opportunities, explicit Provider Slots (Meeting Provider, LMS-Content Sync Provider — both named in Learning's own pre-retrofit file), Extension Points, Dashboards, KPIs, Security Classification, Audit Requirements; fold Data Ownership content into its already-present Domain Contracts section.
+3. **Remaining domains** — Health Clinic, School Operations, Smart Campus, Inventory, Reception (already on the retired v3) need the same lightweight addition Academic just received: Domain Invariants, Domain Contracts, Architecture Validation, Verdict, plus reordering into the seven clusters. Administration, Platform Services, Students, Admissions, HR, Accounting (still on the retired v1) need the full canonical build-out. Sequencing follows the already-agreed retrofit priority (HR → Students → Admissions, Learning now already in progress), reordered only if a future decision says otherwise.
+
+**Freeze order, following directly from this reconciliation:** governance unification (this section) → template adoption (this section, done) → domain migration (per-domain, not yet started) → freeze. Not the reverse — freezing a domain against a template that was still being reconciled would freeze the accidental gap along with it.
 
 ### File structure per domain (BUS-0016)
 
-Every domain is a single file under `docs/business-domains/` until it actually needs otherwise. **A domain is promoted to its own folder only when its file exceeds roughly 250–300 lines** — not preemptively, not uniformly, per BUS-0016. When that happens, sections map onto the existing v3 template rather than a new taxonomy: `README.md` (Purpose/Responsibilities/Business Capabilities/Commercial Differentiators), `entities.md` (Submodules/Master Data/Settings), `workflows.md` (Workflows/Domain Events/Automation Opportunities), `ai.md` (AI Opportunities — only for domains with real AI design weight), `integrations.md` (Provider Slots/Public APIs/Extension Points/Mobile Features), `reports.md` (Dashboards/Reports/KPIs), `permissions.md` (Security Classification/Permissions/Audit Requirements/Data Ownership), `decisions.md` (Related ADRs + open items), `diagrams/`. Learning is the domain most likely to cross this threshold first, expected at its v1→v3 retrofit, not before.
+Every domain is a single file under `docs/business-domains/` until it actually needs otherwise. **A domain is promoted to its own folder only when its file exceeds roughly 250–300 lines** — not preemptively, not uniformly, per BUS-0016. When that happens, sections map onto the canonical template's seven clusters rather than a new taxonomy: `readme.md` (Domain Purpose/Business Scope/Commercial Differentiators), `entities.md` (Business Objects), `workflows.md` (Business Processes/Events/Automation Opportunities), `ai.md` (AI Opportunities — only for domains with real AI design weight), `integrations.md` (Integrations/Extension Points), `experience.md` (Permissions/Mobile Features/Dashboards/Reports/KPIs), `governance.md` (Security Classification/Audit Requirements/Domain Invariants/Domain Contracts), `decisions.md` (Related ADRs + Architecture Validation + Verdict + open items), `diagrams/`. Learning is the domain most likely to cross this threshold first, at its canonical-template migration.
 
 ### Architecture Status legend
 
@@ -59,25 +81,29 @@ This document is documentation-first. Conversation is temporary; this index, the
 
 ## Domain Map
 
+**The Template column below still shows the retired v1/v2/v3 labels for most domains** — it reflects each one's state *before* the canonical-template reconciliation (Documentation standards, above) and will be updated domain-by-domain as each one actually migrates, per the Migration Guidelines. **Learning is the one exception** — its row already reflects partial migration (Domain Invariants, Domain Contracts, and Architecture Validation added); every other domain's label below is still fully pre-migration.
+
 | # | Domain | Template | Document |
 |---|---|---|---|
 | 1 | Administration | v1 | [administration.md](business-domains/administration.md) |
 | 2 | Platform Services | v1 | [platform-services.md](business-domains/platform-services.md) |
-| 3 | Academic | v3 | [academic.md](business-domains/academic.md) |
-| 4 | Students | v1 | [students.md](business-domains/students.md) |
+| 3 | Academic | Reference Blueprint | [academic.md](business-domains/academic.md) |
+| 4 | Students | Reference Blueprint (certified & frozen 2026-07-27; Dashboards a documented exception, see students.md Verdict) | [students.md](business-domains/students.md) |
 | 5 | Admissions | v1 | [admissions.md](business-domains/admissions.md) |
-| 6 | HR | v1 | [hr.md](business-domains/hr.md) |
+| 6 | HR | Reference Blueprint (certified & frozen 2026-07-27) | [hr.md](business-domains/hr.md) |
 | 7 | Accounting | v1 | [accounting.md](business-domains/accounting.md) |
-| 8 | LMS (Distance Learning) — rename to Learning Intelligence Platform pending (BUS-0007) | v1 | [learning.md](business-domains/learning.md) |
+| 8 | LMS (Distance Learning) — rename to Learning Intelligence Platform pending (BUS-0007) | Reference Blueprint | [learning.md](business-domains/learning.md) |
 | 9 | School Health Clinic | v3 | [health-clinic.md](business-domains/health-clinic.md) |
 | 10 | School Operations & Campus Automation | v3 | [school-operations.md](business-domains/school-operations.md) |
 | 11 | Smart Campus & Physical Security | v3 | [smart-campus.md](business-domains/smart-campus.md) |
 | 12 | Inventory | v3 | [inventory.md](business-domains/inventory.md) |
 | 13 | Reception | v3 | [reception.md](business-domains/reception.md) |
 
-**Remaining, not yet documented**: Transportation, Library, Procurement, Assets, Facilities, Communications, Parents, Alumni, Activities, Events, Clubs, Summer Camp, Scout Camp, Compliance, Reports, Analytics, Examinations, Discipline, Special Education, Fundraising, Scholarships. Reception was added out of this list, by explicit request, ahead of the retrofit-priority queue below — it's a new domain, not a v1→v3 retrofit, so it doesn't reorder that queue.
+**Remaining, not yet documented**: Transportation, Library, Procurement, Assets, Facilities (ownership + boundary decided — see [BUS-0033](adr/business/0033-facilities-domain-room-ownership.md), 🟢 Accepted; the domain document itself is still unwritten, deliberately Designed-Not-Yet-Scheduled), Communications, Parents, Alumni, Activities, Events, Clubs, Summer Camp, Scout Camp, Compliance, Reports, Analytics, Examinations, Discipline, Special Education, Fundraising, Scholarships. Reception was added out of this list, by explicit request, ahead of the retrofit-priority queue below — it's a new domain, not a v1→v3 retrofit, so it doesn't reorder that queue.
 
-**Retrofit priority (agreed 2026-07-22).** With Inventory and Academic now at v3, the platform's documentation maturity is uneven across domains, and Academic in particular shares direct boundaries (Assignment/Department/Position via BUS-0017/BUS-0019, Curriculum Path/Specification via BUS-0017) with several still-v1 domains. Rather than opening further new-domain discovery, the agreed next order is: **HR** (shares Assignment/Department/Position with Academic) → **Students** (consumes Enrollment/Curriculum Path/Curriculum Specification) → **Admissions** (feeds Students) → **Learning** (largest pending retrofit, already carries 12 ADRs — BUS-0001–0007, BUS-0011–0015, BUS-0020 — none yet folded into its own prose). Administration, Platform Services, and Accounting remain v1 and follow after these four. This ordering, not just the decision to retrofit, is the thing being recorded here — so it isn't re-derived or silently reordered in a future session.
+**Reference Blueprints (as of 2026-07-27): Academic, Learning, HR, Students.** Students completed the full arc — Discovery, Architecture Reviews (Guardian Ownership, Learning Eligibility Boundary), ADR Sprint (BUS-0030, BUS-0031), Blueprint Integration, Reference Blueprint Completion, Freeze Preparation, Certification — the same rigor Academic, Learning, and HR were certified against, chosen deliberately as the domain to build next specifically because it depends on all three at once, making it the strongest available integration test of the baseline. Certified and frozen 2026-07-27 (see students.md Verdict; Dashboards carries a documented, non-blocking exception). All four now form a stable dependency baseline for downstream domains.
+
+**Retrofit priority (agreed 2026-07-22, updated as domains complete their own arcs).** **Admissions** is next — it feeds Students, which is now a certified Reference Blueprint it can build against. Administration, Platform Services, and Accounting remain v1 and follow after Admissions. This ordering, not just the decision to retrofit, is the thing being recorded here — so it isn't re-derived or silently reordered in a future session.
 
 **Cross-cutting corrections not yet owned by any single domain**: Emergency Coordination (a Core Platform Service, promoted out of School Operations — see [school-operations.md](business-domains/school-operations.md)'s Correction note; no formal ADR yet, tracked below); Event Stream (named in BUS-0005, not yet formally specified as its own Core Platform Service); the Privacy/Consent domain BUS-0006 depends on (doesn't exist yet).
 
@@ -87,10 +113,10 @@ This document is documentation-first. Conversation is temporary; this index, the
 |---|---|---|
 | Administration | — (depends on nothing) | Every domain (permissions, Provider Registry credentials) |
 | Platform Services | — | Accounting, Academic, HR, Reception (Document Templates for visitor badges, Media for correspondence archiving) |
-| Academic | HR (Employee/Position for Teacher/Coordinator Assignment; Department for Academic Department cross-reference) | Students, Accounting, Learning, School Operations, Inventory |
-| Students | Academic | Accounting, Transportation, Library, Learning, Health Clinic, Smart Campus, Reception (a Visit may reference a Student) |
+| Academic | HR (Employee/Position for Teacher/Coordinator Assignment; Department for Academic Department cross-reference) | Students, Accounting, Learning, School Operations, Inventory, HR (Subject Offering feed for teacher-assignment workflows) |
+| Students | Academic, Admissions (handoff) | Accounting, Transportation, Library, Learning (Enrollment/Person, gates Participation per BUS-0031), Health Clinic, Smart Campus, Reception (a Visit may reference a Student), Parents/Family (future — referenced for guardian_student, BUS-0030) |
 | Admissions | — | Students (handoff on acceptance) |
-| HR | — | Payroll (future), Academic (teacher assignments), Reception (Employee/Department for host resolution) |
+| HR | Academic (Subject Offering feed for teacher-assignment workflows), Platform Services (Document Templates for Contract generation/versioning, BUS-0027) | Payroll (future), Academic (teacher assignments), Learning (Instructor/TA staffing, BUS-0025), Reception (Employee/Department for host resolution) |
 | Accounting | Academic, Students | — |
 | Learning | Academic, Students | Academic's gradebook (grades flow in, Academic owns the rule) |
 | Health Clinic | Students | Students/Attendance (medical-excuse flag via events, never direct table access) |
@@ -128,6 +154,16 @@ Full ADRs live in `docs/adr/business/` (template: `docs/adr/business/template.md
 | [BUS-0021](adr/business/0021-adr-granularity-one-decision-per-adr.md) | ADRs hold one central decision; themed ADRs split once sub-decisions stop being coupled (forward-looking, BUS-0017 not retroactively split) | 🟢 Accepted | All (documentation architecture) |
 | [BUS-0022](adr/business/0022-reception-domain-boundary.md) | Reception owns Visitor/Visit identity; Smart Campus owns only Visitor Access Credential/Access Events and consumes Reception's Visitor — a naming collision, not an ownership transfer | 🟢 Accepted | Reception, Smart Campus |
 | [BUS-0023](adr/business/0023-reception-external-party-and-visit-lifecycle.md) | External Party (optional Master Data), polymorphic Correspondence routing, full Visit lifecycle documented end-to-end | 🟢 Accepted (External Party itself 🟡 Proposed) | Reception |
+| [BUS-0024](adr/business/0024-hr-organizational-structure.md) | HR Organizational Structure — Department self-referential/nullable-Branch, Position "reports to" default-with-override | 🟢 Accepted | HR, Academic |
+| [BUS-0025](adr/business/0025-hr-assignment-model.md) | HR Assignment Model — Employment and Position Assignment are two distinct, related `ADR-0024` instances, validates BUS-0019's own claim | 🟢 Accepted | HR, Academic, Learning |
+| [BUS-0026](adr/business/0026-employee-as-person.md) | Employee is a Person-specialization, per `ADR-0001` | 🟢 Accepted | HR |
+| [BUS-0027](adr/business/0027-contract-model.md) | Contract is a distinct, versioned document attached to Employment, not Employment itself | 🟢 Accepted | HR |
+| [BUS-0028](adr/business/0028-employment-lifecycle.md) | Employment lifecycle — Probation → Active → (On Leave) → Terminated/Resigned/Retired | 🟢 Accepted | HR |
+| [BUS-0029](adr/business/0029-position-lifecycle.md) | Position lifecycle — Open/Frozen/Eliminated stored, Filled always derived from Assignment | 🟢 Accepted | HR |
+| [BUS-0030](adr/business/0030-guardian-relationship-ownership.md) | Guardian/`guardian_student` owned by a future Parents/Family domain, not Students; `ADR-0024` foreclosed by its own Out of Scope | 🟢 Accepted | Students, Parents/Family (future) |
+| [BUS-0031](adr/business/0031-learning-eligibility-boundary.md) | Learning Participation Actor stays Person; Enrollment becomes a required gate when the Actor is a Student, reusing BUS-0025's Employment-gate shape | 🟢 Accepted | Students, Learning, Academic |
+| [BUS-0032](adr/business/0032-academic-term-introduced-as-master-data.md) | `Term` introduced as a real Master Data entity (child of Academic Year, `AcademicYear`'s own 3-state lifecycle reused) after a confirmed near-term product requirement for 2–3 terms/year reversed this ADR's own same-day first draft ("Term = AcademicYear"); `SubjectOffering` stores both `term_id` and `academic_year_id` directly (not derived-only), kept consistent by a formal Invariant (`TermAcademicYearMismatchException`); `Section` stays year-scoped, unchanged; Academic Calendar's separation stays unresolved but confirmed non-blocking | 🟢 Accepted | Academic, Learning, Students |
+| [BUS-0033](adr/business/0033-facilities-domain-room-ownership.md) | `Room` (BUS-0018's own undefined Subject Offering axis) resolved by introducing a new `Facilities` domain (reusing the Blueprint's own already-named placeholder), scoped strictly to Physical Space Master Data — a binding Non-Goals section excludes Timetables/Reservations/Physical Security/Environmental Controls/**Assets**/Inventory by name, so `Assets` (equipment/machinery, a fundamentally different acquire/depreciate/maintain lifecycle) stays its own separate future domain, per the Dependency Map's own existing "cross-reference not merge" guidance. Room may not live inside Academic (binding user instruction) and does not fit Inventory (not an OT domain, issue/return/consume lifecycle) or Smart Campus (safety-critical command control, not reference-data ownership). Consumption is hard-restricted to a future `RoomCatalogService`-style contract — `Academic -> Facilities\Models\Room` is explicitly disallowed. Facilities' actual implementation is Designed, Not Yet Scheduled — this ADR resolves ownership and boundary only | 🟢 Accepted | Academic, Facilities (new), Inventory, Smart Campus |
 
 ### Open Architecture Questions
 
@@ -137,14 +173,15 @@ Permanent section. Nothing here is ever silently deleted — an item leaves only
 2. **Health Clinic's, School Operations', and Smart Campus's existing AI Opportunities sections need a retroactive correction pass** to reference the unified `AIDecision` primitive (BUS-0003) instead of each domain's own ad-hoc "human must confirm" wording. Not yet done.
 3. **Event Stream (BUS-0005) is named but not formally specified** as a Core Platform Service — no design pass has been done on it yet.
 4. **The Privacy/Consent domain (BUS-0006) does not exist** anywhere in this document. It's now a blocking dependency for Learning's AI features, not just a noted gap.
-5. **Administration, Platform Services, Students, Admissions, HR, Accounting, and Learning remain on the v1 template** and have not been retrofitted to v3 (Academic completed this retrofit via BUS-0017–0020). Scope of the remaining backfill is undecided.
+5. **Administration, Platform Services, Admissions, and Accounting remain on the retired v1 template** and have not been migrated to the canonical template. Academic, Learning, HR, and Students are all certified Reference Blueprints — see Migration Guidelines. Scope of the remaining backfill for the untouched four is undecided.
 6. **Emergency Coordination's ownership correction** (documented inline in `school-operations.md`) has never been captured as a formal ADR. Not yet fixed.
 7. **Three named, unresolved sub-issues inside the accepted Course Offering structure (BUS-0011):** single-valued Enrollment per Offering can't express a mixed audience; Teacher is single-cardinality with no co-teaching/TA path; Meeting Provider is Offering-level, not session-level.
 8. **Four Learning entities are Proposed but not decided** (BUS-0012–0015). Do not build against these without first converting the relevant ADR to Accepted.
-9. **`learning.md`'s own body text has not been rewritten** to reflect BUS-0001–0015 — the ADRs exist and are cross-referenced, but the prose itself is still the original v1 write-up.
-10. **Academic Calendar's separation from Academic Year** (raised in the general Academic review) remains 🟡 Proposed — not decided.
+9. **Resolved:** `learning.md`'s own body text was rewritten to fold in BUS-0001–0015 and BUS-0020 as part of its Phase 2 design work. What remains open is not the prose but the canonical-template *section* migration (Mobile Features, Reports, Commercial Differentiators, and others) — tracked in Migration Guidelines, not here.
+10. **Academic Calendar's separation from Academic Year** (raised in the general Academic review) remains 🟡 Proposed — not decided. [BUS-0032](adr/business/0032-academic-term-introduced-as-master-data.md) (2026-07-28) discusses this alongside the adjacent "Term" question and concludes it does not block Subject Offering's own design — but does not resolve it; still tracked here.
 11. **The deeper Subject Sequencing (Academic) vs. Curriculum Content (Learning) split** (BUS-0020) remains 🟡 Proposed — only the Subject/Course Template naming boundary itself is settled. Should be resolved when Learning's own v1→v3 retrofit happens.
 12. **Whether Reception should subscribe to the cross-cutting Emergency Coordination service** (visitor accountability during an active emergency) was raised while designing Reception but not decided — 🟡 Proposed, not built against.
+13. **`learning.md`'s pre-existing Course Offering registration mechanism ("academically-tied vs. independent Offering") has never been reconciled with `BUS-0031`'s Enrollment-gate rule** (Actor-type-based, not Offering-type-based). Found during Students Freeze Preparation (2026-07-27); confirmed non-blocking for Students' own certification, since `students.md` states `BUS-0031` completely and correctly on its own side. Tracked here as a Learning Blueprint maintenance item — not resolved, not built against either framing until reconciled.
 
 ### Architecture Assumptions
 

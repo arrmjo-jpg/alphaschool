@@ -51,6 +51,27 @@ class WorkspaceAccessResolver
             $workspaces[] = ['key' => 'provider-registry', 'required_permission' => 'administration.providers.view'];
         }
 
+        // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- reuses
+        // the one permission AcademicYearPolicy/PermissionSeeder already
+        // seeded for catalog management (Sprint 4.1), rather than
+        // inventing a separate workspace-visibility-only permission the
+        // way Provider Registry needed to (§27.6's own resolved gap):
+        // Academic's simpler Reference Master Data has no view/edit
+        // split to preserve, so one permission gating both is correct
+        // here, not a shortcut.
+        if ($this->hasPermission($user, 'academic.manage-catalog')) {
+            $workspaces[] = ['key' => 'academic', 'required_permission' => 'academic.manage-catalog'];
+        }
+
+        // UI Sprint 2 (docs/ADMIN_DESIGN_SYSTEM.md §30.2) -- reuses the
+        // same permission HomeroomAssignmentController itself checks
+        // server-side, not a new workspace-only one, matching Academic's
+        // own precedent immediately above (a temporal Assignment Engine
+        // is still catalog-management work, not a separate capability).
+        if ($this->hasPermission($user, 'academic.manage-catalog')) {
+            $workspaces[] = ['key' => 'assignments', 'required_permission' => 'academic.manage-catalog'];
+        }
+
         return $workspaces;
     }
 

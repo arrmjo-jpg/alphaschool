@@ -1,0 +1,21 @@
+{
+  "status": {
+    "scheduled": "Scheduled",
+    "active": "Active",
+    "ended": "Ended",
+    "cancelled": "Cancelled"
+  },
+  "ongoing": "Ongoing",
+  "reason": "Reason",
+  "endedBy": "Ended by {{name}}",
+  "actions": {
+    "close": "Close",
+    "cancel": "Cancel"
+  },
+  "form": {
+    "reasonLabel": "Reason",
+    "effectiveUntilLabel": "Effective until",
+    "cancelButton": "Back",
+    "submitButton": "Confirm"
+  }
+}

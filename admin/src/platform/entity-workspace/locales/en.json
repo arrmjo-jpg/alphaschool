@@ -1,0 +1,60 @@
+{
+  "tabs": { "ariaLabel": "Entity type" },
+  "list": {
+    "newButton": "New {{entity}}",
+    "searchPlaceholder": "Search {{entity}}...",
+    "filters": {
+      "statusLabel": "Status",
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive",
+      "activeCount": "{{count}} filter active",
+      "activeCount_other": "{{count}} filters active",
+      "clearAll": "Clear all"
+    },
+    "empty": {
+      "none": { "title": "No {{entity}} yet", "body": "Create the first one to get started." },
+      "filtered": { "title": "No results match your filters", "body": "Try adjusting or clearing your filters." }
+    },
+    "error": { "title": "Something went wrong loading this data.", "retry": "Retry" },
+    "pagination": { "pageOf": "Page {{page}} of {{lastPage}}" }
+  },
+  "detail": {
+    "editButton": "Edit",
+    "backButton": "Back to {{entity}}"
+  },
+  "form": {
+    "cancelButton": "Cancel",
+    "saveButton": "Save",
+    "createTitle": "New {{entity}}",
+    "editTitle": "Edit {{entity}}",
+    "unsavedGuard": {
+      "title": "Discard unsaved changes?",
+      "description": "You have unsaved changes. Leaving this page will discard them.",
+      "confirm": "Discard",
+      "cancel": "Keep editing"
+    }
+  },
+  "mutation": {
+    "createSuccess": "{{entity}} created",
+    "updateSuccess": "{{entity}} updated",
+    "statusSuccess": "{{entity}} status updated",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "rowActions": {
+    "view": "View",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "close": "Close",
+    "menuLabel": "Actions"
+  },
+  "statusConfirm": {
+    "deactivateTitle": "Deactivate {{name}}?",
+    "deactivateDescription": "This entity will no longer be available for new assignments. It can be reactivated later.",
+    "activateTitle": "Activate {{name}}?",
+    "closeTitle": "Close {{name}}?",
+    "closeDescription": "Closing this record locks it against further scoped writes. This cannot be undone.",
+    "confirm": "Confirm"
+  }
+}

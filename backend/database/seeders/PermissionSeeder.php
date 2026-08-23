@@ -56,6 +56,15 @@ class PermissionSeeder extends Seeder
             // those stay exactly where they already are, under each
             // owning module's own group.
             'administration' => ['sort_order' => 6, 'icon' => 'layout-grid', 'name' => ['en' => 'Administration', 'ar' => 'الإدارة']],
+            // Sprint 4.1 -- Academic's first real permission group
+            // (Academic Year/Grade Level catalog management). Not
+            // 'academic-catalog' or similar sub-split: a single group
+            // is enough for the one permission this sprint introduces,
+            // matching how every other module started with one group
+            // before splitting.
+            'academic' => ['sort_order' => 7, 'icon' => 'calendar', 'name' => ['en' => 'Academic', 'ar' => 'الأكاديمي']],
+            // Sprint 4.2 -- Admissions' first real permission group.
+            'admissions' => ['sort_order' => 8, 'icon' => 'clipboard-list', 'name' => ['en' => 'Admissions', 'ar' => 'القبول']],
         ];
 
         $groups = [];
@@ -129,6 +138,23 @@ class PermissionSeeder extends Seeder
             // unconditionally visible to anyone who can see the workspace
             // at all, per ProviderRegistryController's own docblock.
             'administration.providers.view' => ['group' => 'administration', 'name' => ['en' => 'View Provider Registry', 'ar' => 'عرض سجل مزودي الخدمة']],
+            // Sprint 4.1 -- AcademicYearPolicy's single permission,
+            // covering create/update/close for AcademicYear, GradeLevel,
+            // and BranchGradeLevel alike. Not assigned to any role below
+            // yet -- which named role owns catalog management isn't
+            // decided (Sprint 4.1 Technical Specification, "Open item"),
+            // matching identity.approve-anonymization's own precedent of
+            // seeding vocabulary ahead of a business decision.
+            'academic.manage-catalog' => ['group' => 'academic', 'name' => ['en' => 'Manage Academic Catalog', 'ar' => 'إدارة الكتالوج الأكاديمي']],
+            // Sprint 4.2 -- ApplicantPolicy's three permissions, directly
+            // from admissions.md's own already-stated Permissions
+            // section. None assigned to any role below -- Admissions'
+            // own personas (Admissions Manager/Officer/Interviewer)
+            // aren't formal Role rows anywhere yet, matching
+            // academic.manage-catalog's own precedent.
+            'admissions.manage-applications' => ['group' => 'admissions', 'name' => ['en' => 'Manage Applications', 'ar' => 'إدارة طلبات الالتحاق']],
+            'admissions.manage-policy' => ['group' => 'admissions', 'name' => ['en' => 'Manage Admissions Policy', 'ar' => 'إدارة سياسة القبول']],
+            'admissions.submit-assessment-score' => ['group' => 'admissions', 'name' => ['en' => 'Submit Assessment Score', 'ar' => 'إدخال نتيجة الاختبار']],
         ];
 
         $permissions = [];

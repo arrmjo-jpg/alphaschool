@@ -8,7 +8,6 @@ use App\Core\Contracts\ReassignsIdentityReferences;
 use App\Core\Contracts\RedactsPersonalData;
 use App\Core\ValueObjects\ReassignmentImpact;
 use App\Modules\Identity\Models\User;
-use Carbon\Carbon;
 use Database\Factories\GuardianStudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,26 +24,18 @@ use Spatie\Activitylog\Support\LogOptions;
  * overwrites history (§7), it closes the current period and opens a new
  * row for the next one.
  *
- * This is HasTemporalAssignment's first real production consumer --
- * the trait itself has only been exercised by its own architecture-level
- * tests until now.
+ * This was HasTemporalAssignment's first real production consumer --
+ * the trait itself had only been exercised by its own architecture-level
+ * tests before this. The concurrency-safety and date-boundary-
+ * normalization fixes this model's own docblock used to document as
+ * known limitations are now handled centrally by the trait itself
+ * (Phase 5 Sprint A0) -- this model no longer carries any local
+ * mutators or stopgap notes for either.
  *
  * `verified_by`/`verified_at` are schema only in this sprint. The real
  * verification workflow (identity-document check, registrar-confirmed,
  * establishing a root of trust reused for every subsequent application by
  * the same guardian) is Phase 4, alongside Admissions.
- *
- * KNOWN LIMITATION, inherited from HasTemporalAssignment itself (Core,
- * Sprint 1.1), not introduced here: the overlap guard is an Eloquent
- * `saving()` hook -- a fetch-then-check-then-write with no row lock and
- * no database-level exclusion constraint. Two concurrent requests
- * creating overlapping relationships for the same guardian-student pair
- * could both pass the check before either write lands. A single
- * consumer should not patch this locally (every future
- * HasTemporalAssignment consumer -- Enrollment, Employment -- would
- * need the identical fix, and three ad hoc implementations is worse
- * than one deferred, correct one); tracked in
- * docs/IMPLEMENTATION_PLAYBOOK.md's Technical Debt Register instead.
  */
 class GuardianStudent extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
@@ -106,32 +97,6 @@ class GuardianStudent extends Model implements ReassignsIdentityReferences, Reda
             'effective_from' => 'date',
             'effective_until' => 'date',
         ];
-    }
-
-    /**
-     * A plain 'date' cast does not itself strip the time-of-day from the
-     * value stored in the database -- only from what Eloquent later
-     * displays back through the accessor. Left unhandled, a row created
-     * with effective_from = now() (real current time, not midnight)
-     * stores that full timestamp, and HasTemporalAssignment's scopeAsOf()
-     * compares against Carbon::parse($date)->startOfDay() -- a row
-     * created any time after midnight on its own effective_from date
-     * would then compare as "starting after" today at midnight and be
-     * wrongly excluded from asOf(today())/active(). Found via this
-     * step's own history-retrieval test, not assumed away. Normalizing
-     * here, not in HasTemporalAssignment itself, since this is specific
-     * to how a consumer sets these two attributes -- worth promoting
-     * into the trait once a second consumer (Enrollment, Employment)
-     * confirms the same need.
-     */
-    public function setEffectiveFromAttribute(mixed $value): void
-    {
-        $this->attributes['effective_from'] = $value !== null ? Carbon::parse($value)->startOfDay() : null;
-    }
-
-    public function setEffectiveUntilAttribute(mixed $value): void
-    {
-        $this->attributes['effective_until'] = $value !== null ? Carbon::parse($value)->startOfDay() : null;
     }
 
     public function guardian(): BelongsTo

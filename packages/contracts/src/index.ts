@@ -6,3 +6,5 @@
 export * from './common'
 export * from './settings'
 export * from './providers'
+export * from './academic'
+export * from './assignments'

@@ -6,11 +6,15 @@ import { TooltipProvider } from '@/platform/components/ui/tooltip'
 import { registerStaticCommands } from '@/platform/command-palette/register-static-commands'
 import { registerConfigurationPlatformWorkspace } from '@/workspaces/administration-configuration/register'
 import { registerProviderRegistryWorkspace } from '@/workspaces/administration-provider-registry/register'
+import { registerAcademicWorkspace } from '@/workspaces/academic/register'
+import { registerAssignmentsWorkspace } from '@/workspaces/assignments/register'
 import '@/platform/i18n'
 
 registerStaticCommands()
 registerConfigurationPlatformWorkspace()
 registerProviderRegistryWorkspace()
+registerAcademicWorkspace()
+registerAssignmentsWorkspace()
 
 export default function App() {
   return (

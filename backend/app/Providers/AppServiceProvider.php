@@ -2,9 +2,19 @@
 
 namespace App\Providers;
 
+use App\Modules\Academic\Events\AcademicYearClosed;
+use App\Modules\Academic\Listeners\InvalidateActiveAcademicYearCache;
+use App\Modules\Academic\Models\AcademicYear;
+use App\Modules\Academic\Policies\AcademicYearPolicy;
 use App\Modules\Administration\Support\ApprovalRoutingResolver as AdministrationApprovalRoutingResolver;
 use App\Modules\Administration\Support\SingleRoleApprovalRoutingResolver as AdministrationSingleRoleApprovalRoutingResolver;
+use App\Modules\Admissions\Contracts\Billable;
+use App\Modules\Admissions\Models\Applicant;
+use App\Modules\Admissions\Policies\ApplicantPolicy;
+use App\Modules\Admissions\Services\ApplicantFeeBillable;
+use App\Modules\Identity\Contracts\StepUpAuthentication;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\StepUpAuthenticationService;
 use App\Modules\IdentityMaintenance\Models\MergeRequest;
 use App\Modules\IdentityMaintenance\Policies\MergeRequestPolicy;
 use App\Modules\IdentityMaintenance\Support\ApprovalRoutingResolver;
@@ -14,6 +24,7 @@ use App\Modules\IdentityMaintenance\Support\WinningPersonAlwaysWinsFieldResolver
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Policies\MediaPolicy;
 use App\Modules\Media\Providers\R2StorageProvider;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +50,20 @@ class AppServiceProvider extends ServiceProvider
         // justify promoting this to Core) and Administration's own
         // deptrac boundary (Administration: [Core] only).
         $this->app->bind(AdministrationApprovalRoutingResolver::class, AdministrationSingleRoleApprovalRoutingResolver::class);
+
+        // Built in Phase 3 with no binding yet -- its own docblock
+        // explicitly anticipates Phase 4 as the first real consumer
+        // ("no guardian-registration flow exists yet to protect"). Sprint
+        // 4.2's GuardianVerificationService is that first consumer;
+        // this binding is the wiring that makes it resolvable, not a
+        // new architectural decision.
+        $this->app->bind(StepUpAuthentication::class, StepUpAuthenticationService::class);
+
+        // Sprint 4.3 -- the fee-payment check ConvertApplicantToStudentAction
+        // depends on. Bound to the Admissions-native implementation (the fee
+        // is an Admissions-domain fact); People consumes it only through
+        // this interface, never Applicant's fee columns directly.
+        $this->app->bind(Billable::class, ApplicantFeeBillable::class);
     }
 
     /**
@@ -52,6 +77,13 @@ class AppServiceProvider extends ServiceProvider
         // App\Modules\Media\Policies\MediaPolicy on its own.
         Gate::policy(Media::class, MediaPolicy::class);
         Gate::policy(MergeRequest::class, MergeRequestPolicy::class);
+        Gate::policy(AcademicYear::class, AcademicYearPolicy::class);
+        Gate::policy(Applicant::class, ApplicantPolicy::class);
+
+        // Sprint 4.1 -- lives under App\Modules\Academic\Listeners,
+        // outside Laravel's default app/Listeners auto-discovery path,
+        // same reason the policies above are explicit.
+        Event::listen(AcademicYearClosed::class, InvalidateActiveAcademicYearCache::class);
 
         // docs/DOMAIN_BLUEPRINT.md §8: Super Admin is a Gate::before
         // bypass keyed off an account flag, entirely outside the Role
