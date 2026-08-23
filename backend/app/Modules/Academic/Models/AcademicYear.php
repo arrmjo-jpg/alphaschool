@@ -33,6 +33,23 @@ class AcademicYear extends Model
         'name_en', 'name_ar', 'start_date', 'end_date', 'status',
     ];
 
+    /**
+     * A real gap found live during UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md
+     * §28.17): the migration's own `default('upcoming')` is a DB-level
+     * default only -- Eloquent's in-memory instance after `::create()`
+     * never reflects it without an explicit refresh(), so any create
+     * path that (correctly, per §28.6) never sets `status` explicitly
+     * returned a row with `status` genuinely absent from its JSON
+     * representation. Every existing test creates through
+     * AcademicYearFactory, which always sets `status` explicitly
+     * (AcademicYearFactory::definition()), so this never surfaced until
+     * a real, factory-free create path existed. Mirrors Term's own
+     * identical fix below.
+     */
+    protected $attributes = [
+        'status' => self::STATUS_UPCOMING,
+    ];
+
     protected function casts(): array
     {
         return [

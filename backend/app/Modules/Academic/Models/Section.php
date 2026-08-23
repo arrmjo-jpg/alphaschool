@@ -42,9 +42,23 @@ class Section extends Model
         'branch_id', 'academic_year_id', 'grade_level_id', 'name', 'capacity', 'is_active',
     ];
 
+    /** Mirrors AcademicYear's own identical fix (UI Sprint 1-B, docs/ADMIN_DESIGN_SYSTEM.md §28.17). */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected function casts(): array
     {
         return [
+            // FK columns cast explicitly -- mirrors Term's own identical
+            // fix (UI Sprint 1-B, docs/ADMIN_DESIGN_SYSTEM.md §28.17):
+            // an HTML <select>'s value is a string, and without these
+            // casts a freshly ::create()'d Section round-trips its FKs
+            // as strings in JSON, failing the frontend's z.number()
+            // contract even though the write itself is correct.
+            'branch_id' => 'integer',
+            'academic_year_id' => 'integer',
+            'grade_level_id' => 'integer',
             'capacity' => 'integer',
             'is_active' => 'boolean',
         ];

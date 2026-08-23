@@ -37,6 +37,11 @@ class Subject extends Model
         'code', 'name_en', 'name_ar', 'is_active',
     ];
 
+    /** Mirrors AcademicYear's own identical fix (UI Sprint 1-B, docs/ADMIN_DESIGN_SYSTEM.md §28.17). */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected function casts(): array
     {
         return [

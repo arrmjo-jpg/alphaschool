@@ -44,9 +44,26 @@ class Term extends Model
         'academic_year_id', 'name_en', 'name_ar', 'sequence_order', 'start_date', 'end_date', 'status',
     ];
 
+    /** Mirrors AcademicYear's own identical fix (UI Sprint 1-B, docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- see that model's docblock for the full explanation. */
+    protected $attributes = [
+        'status' => self::STATUS_UPCOMING,
+    ];
+
     protected function casts(): array
     {
         return [
+            // 'integer', not left uncast: a real bug found live during
+            // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- an
+            // HTML <select>'s value is always a string, and without this
+            // cast a freshly ::create()'d Term round-tripped
+            // academic_year_id as "37" (string) in its JSON response,
+            // failing the frontend's z.number() contract even though the
+            // FK itself was written correctly. `id` and other Eloquent
+            // primary/foreign keys read from the DB are cast to int
+            // automatically by the driver; only a value set from
+            // application input (never persisted-and-refetched) exposed
+            // the gap.
+            'academic_year_id' => 'integer',
             'sequence_order' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',

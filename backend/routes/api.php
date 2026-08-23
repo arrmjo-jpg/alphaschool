@@ -1,8 +1,14 @@
 <?php
 
+use App\Modules\Academic\Http\Controllers\AcademicYearController;
+use App\Modules\Academic\Http\Controllers\GradeLevelController;
+use App\Modules\Academic\Http\Controllers\SectionController;
+use App\Modules\Academic\Http\Controllers\SubjectController;
+use App\Modules\Academic\Http\Controllers\TermController;
 use App\Modules\Administration\Http\Controllers\ConfigurationController;
 use App\Modules\Administration\Http\Controllers\ProviderRegistryController;
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Identity\Http\Controllers\BranchController;
 use App\Modules\Identity\Http\Controllers\MeController;
 use App\Modules\Identity\Http\Controllers\WorkspaceController;
 use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
@@ -35,6 +41,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [MeController::class, 'show'])->name('me');
         Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+        // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- a minimal
+        // read-only lookup, not a Branch CRUD workspace; Section is the
+        // first Academic entity with a real Branch FK.
+        Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
     });
 
     // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- a thin adapter
@@ -65,6 +75,56 @@ Route::prefix('v1')->group(function () {
         Route::get('/{slotKey}', [ProviderRegistryController::class, 'slot'])->where('slotKey', '.*')->name('show');
         Route::post('/{slotKey}/test', [ProviderRegistryController::class, 'testCredentials'])->where('slotKey', '.*')->name('test');
         Route::patch('/{slotKey}', [ProviderRegistryController::class, 'writeCredentials'])->where('slotKey', '.*')->name('write');
+    });
+
+    // UI Sprint 1-B (docs/ADMIN_DESIGN_SYSTEM.md §28.17) -- thin adapters
+    // over each Academic Master Data model, sharing
+    // AcademicMasterDataController's one generic list/get/create/update/
+    // setStatus implementation (no per-entity duplication). No delete
+    // route exists on any of these groups -- §28.7's binding domain
+    // rule ("Reference Master Data entities never expose a Delete
+    // action") is enforced structurally, not just by convention: the
+    // shared base controller has no destroy() method to route to.
+    Route::middleware('auth:sanctum')->prefix('academic')->name('academic.')->group(function () {
+        Route::prefix('academic-years')->name('academic-years.')->group(function () {
+            Route::get('/', [AcademicYearController::class, 'index'])->name('index');
+            Route::get('/{id}', [AcademicYearController::class, 'show'])->name('show');
+            Route::post('/', [AcademicYearController::class, 'store'])->name('store');
+            Route::patch('/{id}', [AcademicYearController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [AcademicYearController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('grade-levels')->name('grade-levels.')->group(function () {
+            Route::get('/', [GradeLevelController::class, 'index'])->name('index');
+            Route::get('/{id}', [GradeLevelController::class, 'show'])->name('show');
+            Route::post('/', [GradeLevelController::class, 'store'])->name('store');
+            Route::patch('/{id}', [GradeLevelController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [GradeLevelController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('subjects')->name('subjects.')->group(function () {
+            Route::get('/', [SubjectController::class, 'index'])->name('index');
+            Route::get('/{id}', [SubjectController::class, 'show'])->name('show');
+            Route::post('/', [SubjectController::class, 'store'])->name('store');
+            Route::patch('/{id}', [SubjectController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [SubjectController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('terms')->name('terms.')->group(function () {
+            Route::get('/', [TermController::class, 'index'])->name('index');
+            Route::get('/{id}', [TermController::class, 'show'])->name('show');
+            Route::post('/', [TermController::class, 'store'])->name('store');
+            Route::patch('/{id}', [TermController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [TermController::class, 'setStatus'])->name('status');
+        });
+
+        Route::prefix('sections')->name('sections.')->group(function () {
+            Route::get('/', [SectionController::class, 'index'])->name('index');
+            Route::get('/{id}', [SectionController::class, 'show'])->name('show');
+            Route::post('/', [SectionController::class, 'store'])->name('store');
+            Route::patch('/{id}', [SectionController::class, 'update'])->name('update');
+            Route::patch('/{id}/status', [SectionController::class, 'setStatus'])->name('status');
+        });
     });
 
     // Sprint 3.2 -- a functional admin surface only (Scope-Out: "Merge
