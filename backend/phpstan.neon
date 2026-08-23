@@ -11,4 +11,8 @@ parameters:
     # do not jump straight to the max level against an empty codebase).
     level: 6
 
-    checkMissingIterableValueType: false
+    # PHPStan 2.0 removed this boolean toggle; the equivalent is ignoring
+    # the error identifier directly (see UPGRADING.md "Removed option
+    # checkMissingIterableValueType").
+    ignoreErrors:
+        - identifier: missingType.iterableValue
