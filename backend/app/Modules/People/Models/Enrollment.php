@@ -81,6 +81,24 @@ class Enrollment extends Model implements OwnedByAggregate
         'status', 'previous_enrollment_id', 'next_enrollment_id',
     ];
 
+    /**
+     * UI Sprint 2's EnrollmentController (docs/ADMIN_DESIGN_SYSTEM.md
+     * §31.2) is this model's first JSON API surface -- without these,
+     * a freshly-fetched row round-trips its FK columns as strings (the
+     * same gap §29.3 already found and fixed for Term/Section), failing
+     * the frontend's `z.number()` contract even though the row itself is
+     * correct.
+     */
+    protected function casts(): array
+    {
+        return [
+            'student_id' => 'integer',
+            'academic_year_id' => 'integer',
+            'branch_id' => 'integer',
+            'grade_level_id' => 'integer',
+        ];
+    }
+
     protected static function newFactory(): EnrollmentFactory
     {
         return EnrollmentFactory::new();

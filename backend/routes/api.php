@@ -4,6 +4,7 @@ use App\Core\Http\Controllers\ReasonCodeController;
 use App\Modules\Academic\Http\Controllers\AcademicYearController;
 use App\Modules\Academic\Http\Controllers\GradeLevelController;
 use App\Modules\Academic\Http\Controllers\HomeroomAssignmentController;
+use App\Modules\Academic\Http\Controllers\SectionAssignmentController;
 use App\Modules\Academic\Http\Controllers\SectionController;
 use App\Modules\Academic\Http\Controllers\SubjectController;
 use App\Modules\Academic\Http\Controllers\TermController;
@@ -16,6 +17,7 @@ use App\Modules\Identity\Http\Controllers\WorkspaceController;
 use App\Modules\IdentityMaintenance\Http\Controllers\MergeRequestController;
 use App\Modules\Media\Http\Controllers\PrivateMediaController;
 use App\Modules\People\Http\Controllers\EmployeeController;
+use App\Modules\People\Http\Controllers\EnrollmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +56,13 @@ Route::prefix('v1')->group(function () {
         // both.
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
         Route::get('/reason-codes', [ReasonCodeController::class, 'index'])->name('reason-codes.index');
+        // UI Sprint 2, SectionAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §31.2) -- Enrollment's own minimal, read-only lookup, living in
+        // People (Foundation), consumed by Academic's Assignments frontend.
+        // /search before /{id} -- Laravel matches routes in registration
+        // order, and {id} would otherwise swallow the literal "search".
+        Route::get('/enrollments/search', [EnrollmentController::class, 'search'])->name('enrollments.search');
+        Route::get('/enrollments/{id}', [EnrollmentController::class, 'show'])->name('enrollments.show');
     });
 
     // Phase E-B (docs/ADMIN_DESIGN_SYSTEM.md §26.13) -- a thin adapter
@@ -146,6 +155,16 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [HomeroomAssignmentController::class, 'store'])->name('store');
             Route::patch('/{id}/close', [HomeroomAssignmentController::class, 'close'])->name('close');
             Route::patch('/{id}/cancel', [HomeroomAssignmentController::class, 'cancel'])->name('cancel');
+        });
+
+        // UI Sprint 2, SectionAssignment slice (docs/ADMIN_DESIGN_SYSTEM.md
+        // §31.6) -- mirrors homeroom-assignments' own shape exactly, same
+        // reasoning: Timeline/Action-shaped, no update/destroy.
+        Route::prefix('section-assignments')->name('section-assignments.')->group(function () {
+            Route::get('/', [SectionAssignmentController::class, 'index'])->name('index');
+            Route::post('/', [SectionAssignmentController::class, 'store'])->name('store');
+            Route::patch('/{id}/close', [SectionAssignmentController::class, 'close'])->name('close');
+            Route::patch('/{id}/cancel', [SectionAssignmentController::class, 'cancel'])->name('cancel');
         });
     });
 

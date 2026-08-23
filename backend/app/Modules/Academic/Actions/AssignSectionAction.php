@@ -7,6 +7,7 @@ use App\Modules\Academic\Models\SectionAssignment;
 use App\Modules\Academic\Services\AcademicCatalogService;
 use App\Modules\People\Exceptions\EnrollmentNotActiveException;
 use App\Modules\People\Models\Enrollment;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,14 +23,21 @@ use Illuminate\Support\Facades\DB;
  * own natural anchor row first (ConvertApplicantToStudentAction locks
  * Applicant; the Sprint 4.4 Enrollment transition Actions lock
  * Enrollment).
+ *
+ * $effectiveFrom (docs/ADMIN_DESIGN_SYSTEM.md §31.11): this Action
+ * predates UI Sprint 2 (Phase 5 Sprint B) and carried the exact same
+ * hardcoded-now()/hardcoded-'active' defect UI Sprint 2's own
+ * independent review found and fixed in AssignHomeroomTeacherAction --
+ * closed here, before this slice's own Create form (which makes
+ * effective_from a real, user-editable field) goes live, not after.
  */
 class AssignSectionAction
 {
     public function __construct(private readonly AcademicCatalogService $academicCatalogService) {}
 
-    public function execute(Enrollment $enrollment, Section $section): SectionAssignment
+    public function execute(Enrollment $enrollment, Section $section, Carbon|string|null $effectiveFrom = null): SectionAssignment
     {
-        return DB::transaction(function () use ($enrollment, $section): SectionAssignment {
+        return DB::transaction(function () use ($enrollment, $section, $effectiveFrom): SectionAssignment {
             $lockedEnrollment = Enrollment::query()->whereKey($enrollment->id)->lockForUpdate()->firstOrFail();
 
             // A withdrawn/graduated Enrollment should never receive a
@@ -48,6 +56,16 @@ class AssignSectionAction
             // written into.
             $this->academicCatalogService->assertAcademicYearIsOpen($section->academic_year_id);
 
+            // Resolved once here, not left to the model's own
+            // setEffectiveFromAttribute() mutator, because `status` must
+            // agree with it -- a future-dated assignment is not yet in
+            // effect, and 'active' would misrepresent that until the
+            // date arrives (status stays administrative-only; asOf()/
+            // active() never trust it either way, this only keeps the
+            // label from contradicting what asOf() will itself compute).
+            $resolvedEffectiveFrom = Carbon::parse($effectiveFrom ?? now())->startOfDay();
+            $status = $resolvedEffectiveFrom->isAfter(Carbon::today()) ? 'scheduled' : 'active';
+
             // SectionAssignment's own Consistency Invariant
             // (booted()::saving()) throws if $enrollment and $section
             // don't agree on branch/academic_year/grade_level --
@@ -57,8 +75,8 @@ class AssignSectionAction
             return SectionAssignment::create([
                 'enrollment_id' => $lockedEnrollment->id,
                 'section_id' => $section->id,
-                'effective_from' => now(),
-                'status' => 'active',
+                'effective_from' => $resolvedEffectiveFrom,
+                'status' => $status,
             ]);
         });
     }

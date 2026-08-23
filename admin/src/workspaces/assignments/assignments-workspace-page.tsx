@@ -9,6 +9,11 @@ import { HomeroomTimelinePage } from '@/workspaces/assignments/homeroom/homeroom
 import { HomeroomCreatePage } from '@/workspaces/assignments/homeroom/homeroom-create-page'
 import { HomeroomClosePage } from '@/workspaces/assignments/homeroom/homeroom-close-page'
 import { HomeroomCancelPage } from '@/workspaces/assignments/homeroom/homeroom-cancel-page'
+import { SectionLandingPage } from '@/workspaces/assignments/section/section-landing-page'
+import { SectionTimelinePage } from '@/workspaces/assignments/section/section-timeline-page'
+import { SectionCreatePage } from '@/workspaces/assignments/section/section-create-page'
+import { SectionClosePage } from '@/workspaces/assignments/section/section-close-page'
+import { SectionCancelPage } from '@/workspaces/assignments/section/section-cancel-page'
 
 const TABS = ['homeroom', 'section', 'teacher'] as const
 type Tab = (typeof TABS)[number]
@@ -17,11 +22,10 @@ type Tab = (typeof TABS)[number]
  * The Temporal Assignment Workspace (docs/ADMIN_DESIGN_SYSTEM.md §30.2)
  * -- a flat Tab Switcher mirroring §28.2's own precedent exactly, but
  * NOT built on EntityWorkspaceShell (§30.1: a genuinely different
- * pattern, no List/Detail/Form/Edit). `homeroom` is the only wired tab
- * this slice (§30.8: "SectionAssignment and TeacherAssignment are
- * explicitly deferred until this slice closes") -- `section`/`teacher`
- * render a stub panel, added for real only when their own slice is
- * built, never spun up speculatively.
+ * pattern, no List/Detail/Form/Edit). `homeroom` (§30) and `section`
+ * (§31) are wired; `teacher` remains an unwired stub panel -- added for
+ * real only when TeacherAssignment's own slice is built, per §31.12's
+ * own explicit deferral, never spun up speculatively.
  */
 export default function AssignmentsWorkspacePage() {
   const { t } = useTranslation('assignments')
@@ -52,7 +56,9 @@ export default function AssignmentsWorkspacePage() {
         </TabsList>
       </Tabs>
 
-      {activeTab === 'homeroom' ? <HomeroomRoutes segments={rest} /> : <StubTabPanel tab={activeTab} />}
+      {activeTab === 'homeroom' && <HomeroomRoutes segments={rest} />}
+      {activeTab === 'section' && <SectionRoutes segments={rest} />}
+      {activeTab === 'teacher' && <StubTabPanel tab={activeTab} />}
     </div>
   )
 }
@@ -75,6 +81,29 @@ function HomeroomRoutes({ segments }: { segments: string[] }) {
   }
   if (rest.length === 2 && rest[1] === 'cancel') {
     return <HomeroomCancelPage sectionId={sectionId} assignmentId={rest[0]!} />
+  }
+
+  return null
+}
+
+function SectionRoutes({ segments }: { segments: string[] }) {
+  if (segments.length === 0) {
+    return <SectionLandingPage />
+  }
+
+  const [enrollmentId, ...rest] = segments as [string, ...string[]]
+
+  if (rest.length === 0) {
+    return <SectionTimelinePage enrollmentId={enrollmentId} />
+  }
+  if (rest.length === 1 && rest[0] === 'new') {
+    return <SectionCreatePage enrollmentId={enrollmentId} />
+  }
+  if (rest.length === 2 && rest[1] === 'close') {
+    return <SectionClosePage enrollmentId={enrollmentId} assignmentId={rest[0]!} />
+  }
+  if (rest.length === 2 && rest[1] === 'cancel') {
+    return <SectionCancelPage enrollmentId={enrollmentId} assignmentId={rest[0]!} />
   }
 
   return null

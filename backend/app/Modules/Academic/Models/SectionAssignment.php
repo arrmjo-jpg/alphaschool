@@ -4,6 +4,7 @@ namespace App\Modules\Academic\Models;
 
 use App\Core\Concerns\HasPublicId;
 use App\Core\Concerns\HasTemporalAssignment;
+use App\Modules\Identity\Models\User;
 use App\Modules\People\Models\Enrollment;
 use Database\Factories\SectionAssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -100,6 +101,19 @@ class SectionAssignment extends Model
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
+    }
+
+    /**
+     * Not on HasTemporalAssignment itself despite ended_by_id being a
+     * shared column (like reason_code_id's reasonCode() relation, which
+     * IS on the trait) -- User lives in the Identity Foundation module,
+     * and Core must never depend on a Foundation module (deptrac's
+     * CoreBoundaryTest). Same reasoning as HomeroomAssignment's own
+     * copy of this relation.
+     */
+    public function endedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ended_by_id');
     }
 
     /**
