@@ -61,7 +61,11 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class SubjectOffering extends Model
 {
+    /**
+     * @use HasFactory<SubjectOfferingFactory>
+     */
     use HasFactory;
+
     use HasPublicId;
     use LogsActivity;
 
@@ -98,26 +102,41 @@ class SubjectOffering extends Model
         });
     }
 
+    /**
+     * @return BelongsTo<Subject, $this>
+     */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
     }
 
+    /**
+     * @return BelongsTo<Section, $this>
+     */
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
     }
 
+    /**
+     * @return BelongsTo<Term, $this>
+     */
     public function term(): BelongsTo
     {
         return $this->belongsTo(Term::class);
     }
 
+    /**
+     * @return BelongsTo<AcademicYear, $this>
+     */
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
     }
 
+    /**
+     * @return HasMany<TeacherAssignment, $this>
+     */
     public function teacherAssignments(): HasMany
     {
         return $this->hasMany(TeacherAssignment::class);
