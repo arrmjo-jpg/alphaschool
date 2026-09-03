@@ -11,4 +11,15 @@ parameters:
     # do not jump straight to the max level against an empty codebase).
     level: 6
 
-    checkMissingIterableValueType: false
+    # PHPStan 2.0 removed this boolean toggle; the equivalent is ignoring
+    # the error identifier directly (see UPGRADING.md "Removed option
+    # checkMissingIterableValueType").
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+
+    # Off by default in Larastan (extension.neon); without it, casts()
+    # (Laravel 11's method-based cast syntax, used throughout this
+    # codebase instead of the legacy $casts property) is never parsed,
+    # so cast attributes fall back to their raw column type instead of
+    # e.g. Carbon (larastan/larastan#1877).
+    parseModelCastsMethod: true

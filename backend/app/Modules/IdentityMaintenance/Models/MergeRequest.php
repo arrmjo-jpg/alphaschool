@@ -77,7 +77,11 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class MergeRequest extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
+    /**
+     * @use HasFactory<MergeRequestFactory>
+     */
     use HasFactory;
+
     use HasPublicId;
     use LogsActivity;
     use SoftDeletes;
@@ -194,36 +198,57 @@ class MergeRequest extends Model implements ReassignsIdentityReferences, Redacts
         });
     }
 
+    /**
+     * @return BelongsTo<Person, $this>
+     */
     public function losingPerson(): BelongsTo
     {
         return $this->belongsTo(Person::class, 'losing_person_id');
     }
 
+    /**
+     * @return BelongsTo<Person, $this>
+     */
     public function winningPerson(): BelongsTo
     {
         return $this->belongsTo(Person::class, 'winning_person_id');
     }
 
+    /**
+     * @return BelongsTo<DuplicateFlag, $this>
+     */
     public function duplicateFlag(): BelongsTo
     {
         return $this->belongsTo(DuplicateFlag::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by_id');
     }
 
+    /**
+     * @return BelongsTo<ApprovalRequest, $this>
+     */
     public function approvalRequest(): BelongsTo
     {
         return $this->belongsTo(ApprovalRequest::class);
     }
 
+    /**
+     * @return BelongsTo<ApprovalRequest, $this>
+     */
     public function rollbackApprovalRequest(): BelongsTo
     {
         return $this->belongsTo(ApprovalRequest::class, 'rollback_approval_request_id');
     }
 
+    /**
+     * @return HasMany<MergeReassignmentLog, $this>
+     */
     public function logs(): HasMany
     {
         return $this->hasMany(MergeReassignmentLog::class);

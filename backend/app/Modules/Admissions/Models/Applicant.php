@@ -49,7 +49,11 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class Applicant extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
+    /**
+     * @use HasFactory<ApplicantFactory>
+     */
     use HasFactory;
+
     use HasPublicId;
     use LogsActivity;
     use SoftDeletes;
@@ -108,16 +112,25 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
         return ApplicantFactory::new();
     }
 
+    /**
+     * @return BelongsTo<Person, $this>
+     */
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
     }
 
+    /**
+     * @return BelongsTo<Guardian, $this>
+     */
     public function guardian(): BelongsTo
     {
         return $this->belongsTo(Guardian::class, 'submitted_by_guardian_id');
     }
 
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
@@ -127,17 +140,25 @@ class Applicant extends Model implements ReassignsIdentityReferences, RedactsPer
      * Academic's own model, referenced read-only -- this Applicant
      * never modifies it, matching the boundary already established for
      * Students in Sprint 4.1.
+     *
+     * @return BelongsTo<GradeLevel, $this>
      */
     public function appliedForGradeLevel(): BelongsTo
     {
         return $this->belongsTo(GradeLevel::class, 'applied_for_grade_level_id');
     }
 
+    /**
+     * @return BelongsTo<ReasonCode, $this>
+     */
     public function rejectionReasonCode(): BelongsTo
     {
         return $this->belongsTo(ReasonCode::class, 'rejection_reason_code_id');
     }
 
+    /**
+     * @return HasMany<AdmissionAssessment, $this>
+     */
     public function assessments(): HasMany
     {
         return $this->hasMany(AdmissionAssessment::class);

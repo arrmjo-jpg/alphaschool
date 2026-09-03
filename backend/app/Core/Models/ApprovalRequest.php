@@ -36,6 +36,9 @@ class ApprovalRequest extends Model
         return $this->morphTo();
     }
 
+    /**
+     * @return HasMany<ApprovalStep, $this>
+     */
     public function steps(): HasMany
     {
         return $this->hasMany(ApprovalStep::class)->orderBy('step_number');

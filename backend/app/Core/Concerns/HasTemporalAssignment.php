@@ -82,7 +82,7 @@ trait HasTemporalAssignment
 
     protected static function bootHasTemporalAssignment(): void
     {
-        static::saving(function (Model $model) {
+        static::saving(function (self $model) {
             $model->guardAgainstOverlap();
         });
     }
@@ -117,6 +117,10 @@ trait HasTemporalAssignment
      * always derived from the date range, so nothing needs a scheduled
      * job to flip scheduled -> active at the right moment.
      */
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
     public function scopeAsOf(Builder $query, Carbon|string $date): Builder
     {
         $date = Carbon::parse($date)->startOfDay();
@@ -128,6 +132,10 @@ trait HasTemporalAssignment
             });
     }
 
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->asOf(now());
@@ -227,6 +235,9 @@ trait HasTemporalAssignment
      * same App\Core\Models\ReasonCode catalog -- defined once here so
      * HTTP-layer adapters (e.g. HomeroomAssignmentController) can eager-load
      * and expose the resolved code without each model redeclaring it.
+     */
+    /**
+     * @return BelongsTo<\App\Core\Models\ReasonCode, $this>
      */
     public function reasonCode(): BelongsTo
     {
