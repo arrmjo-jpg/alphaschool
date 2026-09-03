@@ -60,7 +60,11 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class Enrollment extends Model implements OwnedByAggregate
 {
+    /**
+     * @use HasFactory<EnrollmentFactory>
+     */
     use HasFactory;
+
     use HasPublicId;
     use LogsActivity;
 
@@ -104,11 +108,17 @@ class Enrollment extends Model implements OwnedByAggregate
         return EnrollmentFactory::new();
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
@@ -124,16 +134,25 @@ class Enrollment extends Model implements OwnedByAggregate
     // declared here. Confirmed unused anywhere in the codebase before
     // removal.
 
+    /**
+     * @return HasMany<SuspensionRecord, $this>
+     */
     public function suspensionRecords(): HasMany
     {
         return $this->hasMany(SuspensionRecord::class);
     }
 
+    /**
+     * @return BelongsTo<self, $this>
+     */
     public function previousEnrollment(): BelongsTo
     {
         return $this->belongsTo(self::class, 'previous_enrollment_id');
     }
 
+    /**
+     * @return BelongsTo<self, $this>
+     */
     public function nextEnrollment(): BelongsTo
     {
         return $this->belongsTo(self::class, 'next_enrollment_id');
