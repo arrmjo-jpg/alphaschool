@@ -37,7 +37,11 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class Student extends Model implements ReassignsIdentityReferences, RedactsPersonalData
 {
+    /**
+     * @use HasFactory<StudentFactory>
+     */
     use HasFactory;
+
     use HasPublicId;
     use LogsActivity;
     use SoftDeletes;
@@ -55,16 +59,25 @@ class Student extends Model implements ReassignsIdentityReferences, RedactsPerso
         return StudentFactory::new();
     }
 
+    /**
+     * @return BelongsTo<Person, $this>
+     */
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
     }
 
+    /**
+     * @return HasMany<Enrollment, $this>
+     */
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
     }
 
+    /**
+     * @return BelongsTo<Enrollment, $this>
+     */
     public function currentEnrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class, 'current_enrollment_id');
